@@ -1,0 +1,246 @@
+body {
+  font-size: 1.365rem;                                             
+}
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+.leaflet-control-attribution,
+.leaflet-control-attribution a,
+.leaflet-control-attribution span {
+  font-size: 13.7px !important;
+}
+.command-center-main h1,
+.citizen-title,
+.dashboard-title {
+  font-size: clamp(1.529rem, 0.983rem + 2.6vw, 2.348rem);
+  line-height: 1.15;
+}
+.command-center-main .row.g-3 .card h2,
+.dashboard-card-value {
+  font-size: clamp(1.638rem, 1.092rem + 2.4vw, 2.512rem);
+}
+.command-center-main h2.h4 {
+  font-size: clamp(1.256rem, 0.983rem + 1.1vw, 1.638rem);
+}
+.btn,
+.citizen-btn,
+.citizen-btn-secondary,
+.citizen-btn-danger {
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.13s ease, box-shadow 0.18s ease, filter 0.15s ease,
+    background-color 0.15s ease, border-color 0.15s ease;
+}
+.btn:hover,
+.citizen-btn:hover,
+.citizen-btn-secondary:hover,
+.citizen-btn-danger:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+.btn:active,
+.citizen-btn:active,
+.citizen-btn-danger:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+}
+.btn-primary {
+  background-image: linear-gradient(180deg, #5a8b9a, #4f7c8a);
+  background-color: #4f7c8a;
+  border-color: #4f7c8a;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(79, 124, 138, 0.3);
+}
+.btn-primary:hover {
+  box-shadow: 0 5px 16px rgba(79, 124, 138, 0.42);
+}
+.btn-danger {
+  background-image: linear-gradient(180deg, #e05b5b, #d64545);
+  background-color: #d64545;
+  border-color: #d64545;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(214, 69, 69, 0.28);
+}
+.btn-danger:hover {
+  box-shadow: 0 5px 16px rgba(214, 69, 69, 0.42);
+}
+.btn-outline-primary {
+  color: #8fb9c6;
+  border: 1px solid rgba(79, 124, 138, 0.55);
+  background: rgba(79, 124, 138, 0.1);
+}
+.btn-outline-primary:hover {
+  background-image: linear-gradient(180deg, #5a8b9a, #4f7c8a);
+  background-color: #4f7c8a;
+  border-color: #4f7c8a;
+  color: #fff;
+  box-shadow: 0 5px 16px rgba(79, 124, 138, 0.38);
+}
+.btn-outline-danger {
+  border-color: rgba(214, 69, 69, 0.6);
+}
+.btn-outline-danger:hover {
+  background-image: linear-gradient(180deg, #e05b5b, #d64545);
+  background-color: #d64545;
+  border-color: #d64545;
+  color: #fff;
+  box-shadow: 0 5px 16px rgba(214, 69, 69, 0.35);
+}
+.citizen-btn {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+}
+.citizen-btn:hover {
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.3);
+}
+.command-center-main .card,
+.citizen-card {
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.16s ease, box-shadow 0.22s ease, border-color 0.2s ease;
+}
+.command-center-main .card:hover,
+.citizen-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+  border-color: #46555b;
+}
+.command-center-main .row.g-3 .card,
+.dashboard-card,
+.citizen-card {
+  position: relative;
+}
+.command-center-main .row.g-3 .card::before,
+.dashboard-card::before,
+.citizen-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 14px 14px 0 0;
+  background: linear-gradient(90deg, #4f7c8a, #3d8b63);
+  opacity: 0.85;
+  pointer-events: none;                                               
+}
+@media (max-width: 991.98px) {
+  .command-center-main > .container-fluid {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+@media (max-width: 991.98px) {
+  .command-center-wrapper > .d-flex {
+    flex-direction: column;
+  }
+  .command-center-wrapper .cc-sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: 0;
+    padding: 8px 10px;
+    border-right: none;
+    border-bottom: 1px solid #303b40;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .command-center-wrapper .cc-sidebar-title {
+    display: none;
+  }
+  .command-center-wrapper .cc-sidebar-menu {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: max-content;
+    gap: 6px;
+  }
+  .command-center-wrapper .cc-sidebar-link {
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .command-center-wrapper .cc-sidebar-link span:last-child {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 767.98px) {
+  .gis-app-wrapper.gis-role-authority {
+    height: auto;
+    min-height: 0;
+  }
+  .gis-role-authority .gis-workspace {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+  }
+  .gis-role-authority .gis-map-container {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 56vh;
+    min-height: 300px;
+    flex: 0 0 auto;
+    order: 1;
+  }
+  .gis-role-authority .gis-left-rail {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    order: 2;
+    gap: 10px;
+  }
+  .gis-role-authority .gis-telemetry-hud,
+  .gis-role-authority .gis-legend-overlay,
+  .gis-role-authority .gis-controls-overlay {
+    position: static;
+    inset: auto;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    flex: 0 0 auto;
+    overflow: visible;
+    margin: 10px 0 0;
+  }
+  .gis-role-authority .gis-telemetry-hud .gis-panel-body,
+  .gis-role-authority .gis-legend-overlay .gis-panel-body,
+  .gis-role-authority .gis-controls-overlay .gis-panel-body {
+    max-height: none;
+    overflow: visible;
+  }
+  .gis-role-authority .gis-controls-overlay {
+    order: 3;
+  }
+  .gis-role-authority .gis-telemetry-hud.collapsed,
+  .gis-role-authority .gis-legend-overlay.collapsed,
+  .gis-role-authority .gis-controls-overlay.collapsed {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+@media (max-width: 575.98px) {
+  .command-center-main > .container-fluid {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .btn,
+  .citizen-btn {
+    border-radius: 9px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .citizen-btn,
+  .citizen-btn-secondary,
+  .citizen-btn-danger,
+  .command-center-main .card,
+  .citizen-card {
+    transition: none;
+  }
+}

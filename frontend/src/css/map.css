@@ -1,0 +1,180 @@
+.gis-map-container-wrapper {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.gis-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.map-legend-pills {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.map-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.179rem;
+  color: var(--text-secondary);
+}
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.legend-dot.critical { background-color: var(--critical); }
+.legend-dot.high { background-color: var(--high-risk); }
+.legend-dot.moderate { background-color: var(--warning); }
+.legend-dot.safe { background-color: var(--safe); }
+.legend-dot.shelter { background-color: var(--info); }
+.legend-dot.hospital { background-color: #ffffff; }
+.leaflet-map-element {
+  height: 420px;
+  width: 100%;
+  background-color: var(--bg-primary);
+  z-index: 10;
+}
+.gis-base-osmdark {
+  filter: invert(1) hue-rotate(180deg) brightness(1.15) contrast(1.05) saturate(0.6);
+}
+.leaflet-popup-content-wrapper {
+  background-color: var(--card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.6) !important;
+}
+.leaflet-popup-tip {
+  background-color: var(--card) !important;
+}
+.leaflet-container,
+.leaflet-container * {
+  font-family: "Times New Roman", Times, serif !important;
+}
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+  line-height: 1.4 !important;
+  font-family: "Times New Roman", Times, serif !important;
+}
+.map-popup-card h4 {
+  font-size: 1.494rem;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+.map-popup-card p {
+  font-size: 1.226rem;
+  color: var(--text-secondary);
+  margin: 0 0 8px;
+}
+.sentry-zone-marker {
+  background: transparent;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sentry-zone-marker svg { display: block; pointer-events: none; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.55)); }
+.gis-zone-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+.gis-zone-swatch svg { display: block; }
+.sentry-zone-popup__title { display: block; font-size: 1.494rem; }
+.sentry-zone-popup__level { font-weight: 800; margin: 2px 0 6px; }
+.sentry-zone-popup__note {
+  margin-top: 6px;
+  font-size: 1.131rem;
+  color: var(--text-secondary);
+  opacity: 0.9;
+}
+.sentry-risk-radius {
+  cursor: pointer;
+  transition: fill-opacity 180ms ease, stroke-opacity 180ms ease;
+}
+.sentry-zone-area {
+  animation: sentryZoneEntry 1.5s ease-out 1 both;
+}
+.sentry-risk-radius:hover {
+  fill-opacity: 0.14;
+  stroke-opacity: 0.95;
+}
+.sentry-risk-radius--pulse {
+  animation: sentryZonePulse 1.8s ease-in-out infinite;
+}
+@keyframes sentryZoneEntry {
+  0% { stroke-opacity: 0.95; stroke-width: 4; }
+  100% { stroke-opacity: 0.6; stroke-width: 1.5; }
+}
+@keyframes sentryZonePulse {
+  0%, 100% { stroke-opacity: 0.95; stroke-width: 3; }
+  50% { stroke-opacity: 0.35; stroke-width: 7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sentry-zone-area,
+  .sentry-zone-area--pulse {
+    animation: none !important;
+    transition: none;
+  }
+  .sentry-risk-radius,
+  .sentry-risk-radius--pulse {
+    animation: none;
+    transition: none;
+  }
+}
+.sentry-reloc-connector {
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.55));
+}
+.sentry-reloc-popup strong {
+  display: block;
+  font-size: 1.494rem;
+}
+.sentry-reloc-metric {
+  color: var(--text-secondary);
+  margin: 2px 0;
+}
+.sentry-reloc-warn {
+  margin-top: 7px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  font-weight: 600;
+  font-size: 1.131rem;
+  line-height: 1.35;
+}
+.sentry-soft-disc-wrap { background: transparent; border: 0; pointer-events: none; }
+.sentry-soft-disc { border-radius: 50%; pointer-events: none; }
+@keyframes sentrySoftPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+.sentry-soft-disc--pulse { animation: sentrySoftPulse 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .sentry-soft-disc--pulse { animation: none; }
+}
+
+/* Habitation zone markers: the same glossy pin as the arrival effect, held still and sized for the map. */
+.zone-pin { position: relative; width: 36px; height: 45px; transition: transform 0.15s ease; transform-origin: 50% 84%; }
+.zone-pin .fx-pin { position: static; width: 100%; height: 100%; animation: none; left: auto; top: auto; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
+.sentry-zone-marker:hover .zone-pin { transform: scale(1.15); }
+.zone-pin-sm { display: inline-block; width: 24px; height: 30px; }
+.sentry-zone-marker--red .zone-pin { animation: zonePinBob 2.4s ease-in-out infinite; }
+@keyframes zonePinBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .sentry-zone-marker--red .zone-pin { animation: none; } }
+.zone-pin-event { width: 38px; height: 47px; }

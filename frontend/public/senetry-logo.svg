@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" role="img" aria-labelledby="title desc">
+  <title id="title">SENETRY logo</title>
+  <desc id="desc">A charcoal rounded square containing a radar and mountain peaks, above the SENETRY wordmark.</desc>
+  <defs>
+    <clipPath id="badge-clip"><rect x="431" y="352" width="338" height="334" rx="38"/></clipPath>
+  </defs>
+  <!-- Rounded charcoal logo badge -->
+  <rect x="431" y="352" width="338" height="334" rx="38" fill="#1d2829"/>
+  <g clip-path="url(#badge-clip)">
+    <!-- Radar rings -->
+    <circle cx="600" cy="522" r="123" fill="none" stroke="#e9eded" stroke-width="8"/>
+    <path d="M600 399 A123 123 0 0 1 723 522" fill="none" stroke="#f27356" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="600" cy="522" r="63" fill="none" stroke="#e9eded" stroke-width="8"/>
+    <!-- Radar spokes -->
+    <path d="M600 399V459 M600 585V645 M477 522H537 M663 522H723 M513 435L556 478 M644 566L687 609 M687 435L644 478 M556 566L513 609" fill="none" stroke="#e9eded" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="600" cy="522" r="28" fill="#1d2829" stroke="#e9eded" stroke-width="8"/>
+    <!-- Rear green mountain -->
+    <path d="M472 629 L519 544 Q528 528 538 544 L599 641 Q603 649 591 649 H480 Q466 649 472 629Z" fill="#769b7d"/>
+    <path d="M520 570 L529 558 L539 570 L529 581Z" fill="#1d2829"/>
+    <!-- Foreground ochre mountain -->
+    <path d="M561 627 L647 478 Q660 455 674 478 L740 627 Q747 644 730 644 H574 Q553 644 561 627Z" fill="#bda676"/>
+    <path d="M650 542 L662 529 L675 542 L662 555Z" fill="#1d2829"/>
+  </g>
+  <!-- Editable vector wordmark -->
+  <text x="600" y="844" text-anchor="middle" fill="#1d2829" font-family="Arial, Helvetica, sans-serif" font-size="112" font-weight="700" letter-spacing="6" textLength="606" lengthAdjust="spacingAndGlyphs">SENETRY</text>
+</svg>

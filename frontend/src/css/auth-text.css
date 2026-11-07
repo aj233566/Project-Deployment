@@ -1,0 +1,5 @@
+/* Sign-in, sign-up and password pages: every visible text is between 18 px and 32 px, like the rest of the citizen journey. */
+.auth-page :is(div, span, small, label, a, button, input, select, textarea, p, li) { font-size: 18px !important; line-height: 1.4; }
+.auth-page h1, .auth-page h2 { font-size: clamp(26px, 3.2vw, 32px) !important; line-height: 1.15; }
+.auth-page h3, .auth-page h4 { font-size: 22px !important; }
+.auth-page .brand-mark, .auth-page .message-icon, .auth-page .security-dot, .auth-page .spinner-border { font-size: inherit !important; }

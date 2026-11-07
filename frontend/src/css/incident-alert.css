@@ -1,0 +1,8 @@
+/* New-incident banner on the citizen page. Every text is 18-32 px. */
+.ia { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 14px; margin: 0 0 12px; padding: 12px 16px; border: 2px solid #ef4444; border-left-width: 8px; border-radius: 10px; background: #3b0d12; color: #fff; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); }
+.ia-text { display: grid; gap: 2px; flex: 1 1 auto; min-width: 0; font-size: 18px; overflow-wrap: anywhere; }
+.ia-text strong { font-size: 22px; }
+.ia-map { padding: 8px 16px; border-radius: 8px; background: #fff; color: #3b0d12; font: 800 18px/1.2 inherit; text-decoration: none; }
+.ia-close { min-width: 44px; min-height: 44px; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 8px; background: transparent; color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.ia-map:focus-visible, .ia-close:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+@media (max-width: 600px) { .ia { flex-wrap: wrap; } .ia-map { flex: 1 1 auto; text-align: center; } }

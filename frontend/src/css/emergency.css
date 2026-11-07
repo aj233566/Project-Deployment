@@ -1,0 +1,210 @@
+.emergency-queue-boards {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+.priority-queue-section {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+.priority-queue-section.p1 {
+  border-left: 5px solid var(--critical);
+}
+.priority-queue-section.p2 {
+  border-left: 5px solid var(--high-risk);
+}
+.priority-queue-section.p3 {
+  border-left: 5px solid var(--warning);
+}
+.queue-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.queue-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.queue-tag-badge {
+  font-size: 1.131rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+.queue-tag-badge.p1 { background-color: var(--critical); color: #ffffff; }
+.queue-tag-badge.p2 { background-color: var(--high-risk); color: #ffffff; }
+.queue-tag-badge.p3 { background-color: var(--warning); color: #101416; }
+.queue-subtext {
+  font-size: 1.259rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.priority-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+.priority-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.15s ease;
+}
+.priority-card:hover {
+  border-color: var(--border-light);
+  background-color: var(--elevated);
+}
+.priority-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.priority-rank-chip {
+  width: 26px;
+  height: 26px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.179rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+.priority-loc-info h4 {
+  font-size: 1.494rem;
+  margin: 0 0 2px;
+}
+.priority-loc-info span {
+  font-size: 1.131rem;
+  color: var(--text-muted);
+}
+.impact-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background-color: var(--bg-primary);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+.impact-stat-item {
+  display: flex;
+  flex-direction: column;
+}
+.impact-stat-item span.lbl {
+  font-size: 1.07rem;
+  color: var(--text-muted);
+}
+.impact-stat-item span.val {
+  font-size: 1.337rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+.road-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.226rem;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+}
+.road-status-indicator.blocked {
+  background-color: var(--critical-bg);
+  color: #ff9b9b;
+  border: 1px solid var(--critical-border);
+}
+.road-status-indicator.partial {
+  background-color: var(--warning-bg);
+  color: #ffd454;
+  border: 1px solid var(--warning-border);
+}
+.road-status-indicator.open {
+  background-color: var(--safe-bg);
+  color: #8be0b2;
+  border: 1px solid var(--safe-border);
+}
+.shelter-hosp-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 1.179rem;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+.shelter-hosp-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 4px;
+}
+.priority-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+.resource-summary-panel {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-top: 24px;
+}
+.resource-meter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.resource-meter-box {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.resource-meter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.259rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.resource-bar-track {
+  width: 100%;
+  height: 6px;
+  background-color: var(--bg-primary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.resource-bar-fill {
+  height: 100%;
+  background-color: var(--info);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}

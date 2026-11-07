@@ -1,0 +1,80 @@
+export const initialResources = [
+  {
+    id: "RES-01",
+    name: "12th Battalion NDRF (Doimukh / Itanagar)",
+    type: "Rescue Unit",
+    category: "NDRF",
+    totalUnits: 12,
+    availableUnits: 8,
+    deployedUnits: 4,
+    location: "Assigned: Mangan & Haflong",
+    contactPerson: "Cmdt. R. K. Sharma",
+    phone: "+91-360-2277112",
+    status: "Active Deployment"
+  },
+  {
+    id: "RES-02",
+    name: "SDRF Sikkim Quick Response Force",
+    type: "Rescue Unit",
+    category: "SDRF",
+    totalUnits: 8,
+    availableUnits: 4,
+    deployedUnits: 4,
+    location: "Assigned: Chungthang & Dikchu",
+    contactPerson: "Insp. T. Bhutia",
+    phone: "+91-3592-202999",
+    status: "Active Deployment"
+  },
+  {
+    id: "RES-03",
+    name: "Advanced Life Support (ALS) 108 Fleet",
+    type: "Ambulance",
+    category: "Medical Transport",
+    totalUnits: 38,
+    availableUnits: 26,
+    deployedUnits: 12,
+    location: "Regional Hubs across NER",
+    contactPerson: "Dr. L. Renthlei",
+    phone: "108 / +91-389-2311108",
+    status: "Operational"
+  },
+  {
+    id: "RES-04",
+    name: "Heavy Hydraulic Earthmovers & Dozers (BRO)",
+    type: "Heavy Equipment",
+    category: "Road Clearing",
+    totalUnits: 22,
+    availableUnits: 13,
+    deployedUnits: 9,
+    location: "NH-10, NH-29, NH-54 corridors",
+    contactPerson: "Col. V. Nair (Project Swastik)",
+    phone: "+91-3592-204123",
+    status: "Operational"
+  },
+  {
+    id: "RES-05",
+    name: "Field Trauma & Disaster Medical Units",
+    type: "Medical Team",
+    category: "Healthcare",
+    totalUnits: 16,
+    availableUnits: 10,
+    deployedUnits: 6,
+    location: "Mangan, Haflong & Aizawl Base",
+    contactPerson: "Dr. P. Goswami",
+    phone: "+91-361-2234500",
+    status: "Active Deployment"
+  },
+  {
+    id: "RES-06",
+    name: "Designated Relief Shelters & Community Camps",
+    type: "Shelter Facility",
+    category: "Evacuation",
+    totalUnits: 27,
+    availableUnits: 23,
+    deployedUnits: 4,
+    location: "State DDMA registered premises",
+    contactPerson: "NER Disaster Relief Cell",
+    phone: "1070",
+    status: "Operational"
+  }
+];

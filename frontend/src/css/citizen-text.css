@@ -1,0 +1,26 @@
+/* Citizen pages: every visible text is between 18 px and 32 px (same rule as the command center).
+   Switched on by the "role-citizen" class that App.jsx puts on the layout, so authority pages are not affected. */
+.role-citizen .btn, .role-citizen .btn-sm, .role-citizen .status-badge, .role-citizen .badge, .role-citizen small, .role-citizen .small,
+.role-citizen option, .role-citizen .form-control, .role-citizen .form-select, .role-citizen label,
+.role-citizen .emergency-contact-label, .role-citizen .gis-cz-status-why, .role-citizen .gis-cz-locmode-text,
+.role-citizen .gis-focus-preset-intent, .role-citizen .gis-cz-foot, .role-citizen .gis-cz-hazard-time,
+.role-citizen .gis-cz-tips-toggle, .role-citizen .gis-cz-tips-toggle span,
+.role-citizen .leaflet-control-attribution, .role-citizen .leaflet-control-attribution a,
+.role-citizen .leaflet-control-attribution span { font-size: 18px !important; line-height: 1.35; }
+.role-citizen .citizen-title, .role-citizen .weather-title, .role-citizen .incidents-title, .role-citizen .emergency-resources-title,
+.role-citizen .risk-value, .role-citizen .emergency-summary-value, .role-citizen main h1 { font-size: 32px !important; line-height: 1.15; }
+.role-citizen .gis-cz-status-why, .role-citizen .gis-cz-foot, .role-citizen .gis-focus-preset-intent { white-space: normal; overflow-wrap: anywhere; }
+.role-citizen .leaflet-control-attribution { max-width: 90%; white-space: normal; }
+@media (max-width: 600px) { .role-citizen .citizen-title, .role-citizen main h1 { font-size: 26px !important; } }
+.role-citizen h1, .role-citizen .incident-stat-value { font-size: 32px !important; line-height: 1.15; }
+.role-citizen [class*="emergency-resource-"], .role-citizen [class*="emergency-deployment-"] { font-size: 18px !important; }
+@media (max-width: 600px) { .role-citizen h1 { font-size: 26px !important; } }
+.role-citizen .weather-icon, .role-citizen .weather-temperature { font-size: 32px !important; line-height: 1.1; }
+.role-citizen .gis-cz-header-pill { font-size: 18px !important; }
+/* The layer buttons (INCIDENTS, ZONES, HABITATIONS, SITES, ROAD STATUS, ROUTES, RESET) are 18 px now, so they wrap onto more lines
+   instead of running past the edge of the panel. */
+.role-citizen .gis-cz-map-actions, .gis-role-citizen .gis-cz-map-actions { flex-wrap: wrap !important; }
+.gis-role-citizen .gis-cz-map-actions .gis-cz-map-layer, .gis-role-citizen .gis-cz-map-actions .gis-cz-map-reset { flex: 1 1 calc(50% - 6px); min-width: 0; padding: 6px 8px; overflow-wrap: anywhere; }
+/* The citizen map header grows with its text (the status pill is 18 px) instead of cutting it off. */
+.gis-role-citizen .gis-header-citizen { height: auto !important; min-height: 56px; flex-wrap: wrap; padding-block: 8px; overflow: visible !important; }
+.gis-role-citizen .gis-cz-header-pill { white-space: normal; line-height: 1.25; text-align: center; }

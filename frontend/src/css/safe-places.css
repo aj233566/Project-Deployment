@@ -1,0 +1,14 @@
+/* "Safe places near you" card. Every text is 18-32 px. */
+.sp { font-size: 18px; line-height: 1.4; }
+.sp-note { margin: 8px 0; color: #a3b7d2; font-size: 18px; }
+.sp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sp-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border: 1px solid rgba(148, 163, 184, 0.3); border-left: 5px solid #22c55e; border-radius: 8px; background: rgba(2, 8, 20, 0.5); }
+.sp-main { display: grid; gap: 2px; min-width: 0; flex: 1 1 220px; font-size: 20px; overflow-wrap: anywhere; }
+.sp-meta { font-size: 18px; color: #a3b7d2; }
+.sp-road { font-size: 18px; font-weight: 800; }
+.sp-road-open { color: #86efac; }
+.sp-road-restricted { color: #fde047; }
+.sp-road-blocked { color: #fca5a5; }
+.sp-road-unknown { color: #cbd5e1; }
+.sp-go { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border-radius: 8px; background: #38bdf8; color: #04101e; font: 700 18px/1.2 inherit; text-decoration: none; }
+.sp-go:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }

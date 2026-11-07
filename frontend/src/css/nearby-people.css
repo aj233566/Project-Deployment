@@ -1,0 +1,36 @@
+/* "People nearby" card on the citizen dashboard, and the person pins on the maps. Every text is 18-32 px. */
+.np { font-size: 18px; line-height: 1.4; }
+.np * { box-sizing: border-box; }
+.np-count { font-size: 18px; color: #a3b7d2; }
+.np-safety { margin: 8px 0 14px; padding: 10px 14px; border-left: 4px solid #f87171; background: rgba(248, 113, 113, 0.1); font-size: 18px; }
+.np-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 10px; }
+.np-field { display: flex; flex-direction: column; gap: 4px; font-size: 18px; min-width: 0; }
+.np-field span { color: #a3b7d2; }
+.np .np-field input, .np .np-field select { width: 100%; min-height: 44px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.45); background: rgba(2, 8, 20, 0.7); color: #e8f1ff; font: 400 18px/1.35 inherit; }
+.np button { min-height: 44px; border-radius: 8px; font: 700 18px/1.2 inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; }
+.np button:disabled { opacity: 0.5; cursor: not-allowed; }
+.np button:focus-visible, .np input:focus-visible, .np select:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.np-switch { border: 2px solid rgba(148, 163, 184, 0.6); background: rgba(2, 8, 20, 0.6); color: #d6e6fb; letter-spacing: 0.04em; }
+.np-switch i { width: 14px; height: 14px; border-radius: 50%; background: #64748b; }
+.np-switch.on { border-color: #22c55e; background: rgba(34, 197, 94, 0.18); color: #bbf7d0; }
+.np-switch.on i { background: #22c55e; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25); }
+.np-ghost { border: 1px solid rgba(148, 163, 184, 0.5); background: transparent; color: #d6e6fb; }
+.np-place { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 600; }
+.np-note { margin: 6px 0; color: #a3b7d2; font-size: 18px; }
+.np-error { margin: 8px 0; padding: 8px 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.15); color: #fecaca; font-size: 18px; }
+.np-picker { display: grid; gap: 8px; margin-bottom: 10px; }
+.np-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.np-results button { width: 100%; justify-content: flex-start; text-align: left; border: 1px solid rgba(148, 163, 184, 0.4); background: rgba(2, 8, 20, 0.6); color: #e8f1ff; font-weight: 500; }
+.np-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.np-person { display: grid; gap: 2px; padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.3); border-left: 5px solid #94a3b8; background: rgba(2, 8, 20, 0.55); font-size: 20px; min-width: 0; }
+.np-tag { font-size: 18px; font-weight: 800; letter-spacing: 0.03em; }
+.np-meta { font-size: 18px; color: #a3b7d2; }
+.zone-pin-person { width: 32px; height: 40px; }
+.np-quick { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
+.np-sos, .np-safe, .np-call { min-height: 52px; padding: 10px 20px; border-radius: 8px; border: 0; font: 800 20px/1.2 inherit; letter-spacing: 0.03em; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+.np-sos { background: #ef4444; color: #fff; }
+.np-safe { background: #38bdf8; color: #04101e; }
+.np-call { background: transparent; border: 2px solid #ef4444; color: #fecaca; }
+@media (max-width: 600px) { .np-sos, .np-safe, .np-call { flex: 1 1 100%; justify-content: center; } }
+.np-answer { margin: 10px 0; padding: 12px 14px; border-radius: 8px; border-left: 5px solid #f59e0b; background: rgba(245, 158, 11, 0.12); font-size: 20px; font-weight: 600; }
+.np-answer.got { border-left-color: #22c55e; background: rgba(34, 197, 94, 0.14); }

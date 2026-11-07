@@ -1,0 +1,42 @@
+/* Citizen map: the tabs that choose between the flat map, the 3D map and the 3D globe, and the stage for the two 3D views.
+   The 3D views use the .icc-gl styles of the command center, so the variables they need are given here. */
+.citizen-map-views { --icc-line: rgba(56, 189, 248, 0.26); --icc-line-strong: rgba(56, 189, 248, 0.55); --icc-cyan: #38bdf8; --icc-body: 'Inter', 'Segoe UI', system-ui, sans-serif; --t-s: clamp(18px, 0.96vw, 20px); display: flex; flex-direction: column; gap: 8px; }
+.citizen-map-display {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "title title" "styles layers" "emergency emergency" "hint hint";
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(76, 123, 137, .45);
+  border-radius: 11px;
+  background: linear-gradient(145deg, #111e24, #0e171c);
+  color: #d8e5eb;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+.citizen-map-display-title { grid-area: title; color: #91a4af; font: 800 13px/1.2 'Inter', 'Segoe UI', system-ui, sans-serif; letter-spacing: .14em; }
+.citizen-map-style-controls { grid-area: styles; display: flex; flex-wrap: wrap; align-items: center; gap: 9px; min-width: 0; min-height: 100%; padding: 11px; border: 1px solid rgba(76, 123, 137, .3); border-radius: 9px; background: rgba(17, 30, 36, .78); }
+.citizen-map-provider { flex: 0 0 auto; padding: 4px 8px; border-radius: 99px; background: rgba(36, 217, 223, .12); color: #82f1f4; font: 800 11px/1.2 'Inter', 'Segoe UI', system-ui, sans-serif; letter-spacing: .08em; }
+.citizen-map-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.citizen-map-display .citizen-map-layers-target { display: contents; }
+.citizen-map-display .citizen-map-emergency-target { display: contents; }
+.citizen-map-display .citizen-map-hint { grid-area: hint; }
+.citizen-map-layers-target { display: contents; }
+.citizen-map-emergency-target { display: contents; }
+.citizen-map-hint { flex-basis: 100%; }
+.citizen-map-tab { min-height: 38px; padding: 6px 12px; border: 1px solid #344a52; border-radius: 7px; background: #121d23; color: #c4d2d8; font: 700 13px/1.2 'Inter', 'Segoe UI', system-ui, sans-serif; letter-spacing: .04em; cursor: pointer; transition: background .16s ease, border-color .16s ease, color .16s ease; }
+.citizen-map-tab:hover { border-color: #4d7e88; background: #192930; color: #f1f8fa; }
+.citizen-map-display .citizen-map-tab.active { background: linear-gradient(135deg, #167984, #155c66); border-color: #2bd3d8; color: #f3ffff; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 1px rgba(43,211,216,.1); }
+.citizen-map-tab:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.citizen-map-style-tab { min-width: 48px; }
+.citizen-map-hint { min-width: 0; color: #a3b7d2; font-size: 13px; line-height: 1.35; }
+.citizen-map-stage { position: relative; height: min(78vh, 760px); min-height: 460px; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; overflow: hidden; }
+@media (max-width: 860px) { .citizen-map-display { grid-template-columns: minmax(0, 1fr); grid-template-areas: "title" "styles" "layers" "emergency" "hint"; } }
+@media (max-width: 600px) { .citizen-map-stage { height: 70vh; min-height: 420px; } .citizen-map-tab { flex: 1 1 auto; padding: 6px 9px; } }
+.citizen-map-views .maplibregl-ctrl-attrib, .citizen-map-views .maplibregl-ctrl-attrib a, .citizen-map-views .maplibregl-ctrl-scale { font-size: 18px !important; line-height: 1.3; }
+.citizen-map-views .maplibregl-ctrl-attrib { background: rgba(3, 9, 19, 0.82) !important; color: #a3b7d2 !important; max-width: 72%; }
+.citizen-map-views .maplibregl-ctrl-attrib a { color: #7dd3fc !important; }
+/* The Controls panel that the 3D views carry is not used on the citizen page. */
+.citizen-map-stage .gis-app-wrapper { display: none; }
+/* Cesium's credit line follows the same 18 px minimum. */
+.citizen-map-views .cesium-credit-wrapper, .citizen-map-views .cesium-credit-wrapper *, .citizen-map-views .cesium-credit-lightbox-title, .citizen-map-views .cesium-credit-expand-link, .citizen-map-views .cesium-credit-textContainer * { font-size: 18px !important; line-height: 1.3; }

@@ -1,0 +1,15 @@
+/* Authority pages other than the command center: every visible text is between 18 px and 32 px, the same rule as the citizen pages.
+   Switched on by the "role-authority" class that App.jsx puts on the layout (not on the command center, which has its own scale). */
+.role-authority .btn, .role-authority .btn-sm, .role-authority .badge, .role-authority .badge-ops, .role-authority .notif-channel-badge,
+.role-authority .authority-severity-badge, .role-authority th, .role-authority td, .role-authority small, .role-authority .lbl,
+.role-authority .score-label, .role-authority .resource-id, .role-authority label, .role-authority option,
+.role-authority .form-control, .role-authority .form-select,
+.role-authority [class*="emergency-resource-"], .role-authority [class*="emergency-deployment-"], .role-authority [class*="emergency-contact-"],
+.role-authority .ops-panel span, .role-authority .ops-panel small { font-size: 18px !important; line-height: 1.35; }
+.role-authority h1, .role-authority h2[class*="-title"], .role-authority .kpi-metric-value, .role-authority .authority-stat-value,
+.role-authority .emergency-summary-value, .role-authority .score-number, .role-authority .weather-title { font-size: 32px !important; line-height: 1.15; }
+.role-authority .emergency-resources-title, .role-authority .ops-panel-title { font-size: 28px !important; }
+@media (max-width: 600px) { .role-authority h1, .role-authority h2[class*="-title"], .role-authority .emergency-resources-title { font-size: 26px !important; } }
+.role-authority .small, .role-authority .resource-meter-header, .role-authority .resource-meter-header div { font-size: 18px !important; line-height: 1.35; }
+/* Side space: on a wide screen the pages used to start right at the window edge. */
+.role-authority > :not(nav):not(.navbar):not(header) { box-sizing: border-box; padding-inline: max(var(--bs-gutter-x, 0px), clamp(16px, 1.6vw, 40px)) !important; }

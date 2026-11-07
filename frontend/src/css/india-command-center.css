@@ -1,0 +1,828 @@
+/* India / Delhi NCR / state Disaster Response Command Center.
+   Everything is scoped under .india-command-center so no other SENTRY page is affected.
+
+   Text size rule for this page: every piece of visible text, including the embedded map, is between 18px and 32px.
+   All font sizes below therefore come from the --t-* tokens; the tokens clamp to that range at every screen width. */
+
+.india-command-center {
+  --icc-bg: var(--bg-primary, #101416);
+  --icc-panel: var(--surface, #1d2427);
+  --icc-panel-2: var(--surface-elevated, #242d31);
+  --icc-line: var(--border, #303b40);
+  --icc-line-strong: var(--info, #4f7c8a);
+  --icc-text: var(--text-primary, #f2f4f5);
+  --icc-muted: var(--text-secondary, #b6c0c4);
+  --icc-cyan: var(--info, #4f7c8a);
+  --icc-red: var(--critical, #d64545);
+  --icc-orange: var(--high-risk, #d97732);
+  --icc-yellow: var(--warning, #c9a227);
+  --icc-green: var(--safe, #3d8b63);
+  --icc-blue: var(--info, #4f7c8a);
+  --icc-display: var(--font-ui, 'Segoe UI', system-ui, sans-serif);
+  --icc-body: var(--font-ui, 'Segoe UI', system-ui, sans-serif);
+
+  /* Match the 18–32px authority-page text scale. */
+  --t-s: 18px;
+  --t-m: 18px;
+  --t-l: 22px;
+  --t-xl: 28px;
+  --t-2xl: 32px;
+
+  /* Height of the map row on wide screens. */
+  --icc-main-h: clamp(640px, 80vh, 980px);
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--icc-bg);
+  color: var(--icc-text);
+  font-family: var(--icc-body);
+  font-size: var(--t-m);
+  line-height: 1.4;
+}
+
+.india-command-center *,
+.india-command-center *::before,
+.india-command-center *::after { box-sizing: border-box; }
+
+.icc-root {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  grid-template-areas:
+    'header'
+    'map'
+    'side'
+    'bottom'
+    'foot';
+  gap: 0.7em;
+  padding: 0.7em;
+  min-width: 0;
+  font-size: var(--t-m);
+}
+.icc-header { grid-area: header; }
+.icc-map { grid-area: map; }
+.icc-side { grid-area: side; }
+.icc-bottom { grid-area: bottom; }
+.icc-foot { grid-area: foot; }
+
+.icc-sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Panel frame ---------- */
+.icc-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--icc-panel);
+  border: 1px solid var(--icc-line);
+  border-radius: var(--radius, 6px);
+  box-shadow: none;
+}
+.icc-panel::before,
+.icc-panel::after {
+  content: none;
+}
+.icc-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2em 0.7em;
+  min-height: 2.6em;
+  padding: 0.4em 0.85em;
+  border-bottom: 1px solid var(--icc-line);
+  background: var(--surface-elevated, #242d31);
+}
+.icc-panel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: 0;
+  font: 700 var(--t-l)/1.1 var(--icc-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f2f8ff;
+}
+.icc-panel-title svg { color: var(--icc-cyan); flex: none; }
+.icc-panel-kicker {
+  margin-left: auto;
+  font-size: var(--t-s);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--icc-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.icc-panel-actions { margin-left: auto; min-width: 0; }
+.icc-panel-kicker + .icc-panel-actions { margin-left: 0; }
+.icc-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  padding: 0.8em 0.95em 0.85em;
+  overflow: hidden auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79, 124, 138, 0.4) transparent;
+}
+
+.icc-state { margin: 0; padding: 0.5em 0; color: var(--icc-muted); font-size: var(--t-m); }
+.icc-state-error { color: #fda4a4; }
+.icc-state-warn { color: #fcd34d; padding: 0 0 0.3em; font-size: var(--t-s); }
+.icc-caption { margin: auto 0 0; padding-top: 0.3em; color: var(--icc-muted); font-size: var(--t-s); line-height: 1.35; }
+.icc-caption a, .icc-foot a, .icc-extlink { color: var(--icc-cyan); text-decoration: none; }
+.icc-caption a:hover, .icc-foot a:hover, .icc-extlink:hover { text-decoration: underline; }
+.icc-extlink { display: inline-flex; align-items: center; gap: 0.3em; font-size: var(--t-s); }
+
+/* ---------- Badges, tones, bars ---------- */
+.icc-badge {
+  display: inline-block;
+  padding: 0.1em 0.5em;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font: 700 var(--t-s)/1.3 var(--icc-body);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background: rgba(29, 36, 39, 0.5);
+}
+.icc-badge-critical, .icc-badge-red { color: var(--icc-red); }
+.icc-badge-high, .icc-badge-orange { color: var(--icc-orange); }
+.icc-badge-medium, .icc-badge-yellow { color: var(--icc-yellow); }
+.icc-badge-low, .icc-badge-green { color: var(--icc-green); }
+.icc-badge-blue { color: var(--icc-blue); }
+.icc-badge-unknown, .icc-badge-muted { color: var(--icc-muted); }
+.icc-tone-text-red { color: var(--icc-red); }
+.icc-tone-text-orange { color: var(--icc-orange); }
+.icc-tone-text-yellow { color: var(--icc-yellow); }
+.icc-tone-text-green { color: var(--icc-green); }
+.icc-tone-text-blue { color: var(--icc-blue); }
+.icc-tone-text-muted { color: var(--icc-muted); }
+
+.icc-minibar { display: block; height: 0.5em; background: rgba(148, 169, 198, 0.18); border-radius: 2px; overflow: hidden; }
+.icc-minibar-fill { display: block; height: 100%; }
+.icc-tone-cyan { background: var(--icc-cyan); }
+.icc-tone-green { background: var(--icc-green); }
+.icc-tone-yellow { background: var(--icc-yellow); }
+.icc-tone-orange { background: var(--icc-orange); }
+.icc-tone-red { background: var(--icc-red); }
+
+.icc-minitabs { display: flex; gap: 0.2em; flex-wrap: wrap; justify-content: flex-end; }
+.icc-minitabs button {
+  display: inline-flex; align-items: center; gap: 0.4em;
+  padding: 0.35em 0.7em;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--icc-muted);
+  font: 600 var(--t-s)/1.1 var(--icc-body);
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+.icc-minitabs button:hover { color: var(--icc-text); }
+.icc-minitabs button.active { color: #fff; border-color: var(--icc-line-strong); background: color-mix(in srgb, var(--icc-cyan) 32%, var(--icc-panel)); }
+.icc-minitabs button b { color: var(--icc-cyan); font-weight: 700; }
+.icc-panel-toolbar { padding: 0.45em 0.6em; border-bottom: 1px solid var(--icc-line); background: rgba(23, 28, 31, 0.5); }
+.icc-minitabs-wide { justify-content: stretch; flex-wrap: wrap; }
+.icc-minitabs-wide button { flex: 1 1 auto; justify-content: center; padding: 0.5em 0.5em; white-space: nowrap; }
+.india-command-center button:focus-visible,
+.india-command-center a:focus-visible,
+.india-command-center input:focus-visible,
+.india-command-center select:focus-visible { outline: 2px solid var(--icc-cyan); outline-offset: 1px; }
+
+.icc-linkbtn {
+  align-self: flex-start; padding: 0; border: 0; background: none; cursor: pointer; text-align: left;
+  color: var(--icc-cyan); font: 600 var(--t-s)/1.3 var(--icc-body);
+}
+.icc-linkbtn:hover { text-decoration: underline; }
+
+/* ---------- Header ---------- */
+.icc-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) auto minmax(0, 1.55fr) minmax(0, 0.85fr);
+  grid-template-areas:
+    'brand clock weather feeds'
+    'kpis kpis kpis kpis';
+  gap: 0.6em;
+  align-items: stretch;
+  padding: 0.6em;
+  background: var(--icc-panel);
+  border: 1px solid var(--icc-line);
+  box-shadow: inset 0 0 2.4em rgba(79, 124, 138, 0.08);
+  position: relative;
+}
+.icc-header::before, .icc-header::after {
+  content: ''; position: absolute; width: 1em; height: 1em; pointer-events: none; border: 0 solid var(--icc-cyan);
+}
+.icc-header::before { top: -1px; left: -1px; border-top-width: 2px; border-left-width: 2px; }
+.icc-header::after { right: -1px; bottom: -1px; border-right-width: 2px; border-bottom-width: 2px; }
+.icc-brand { grid-area: brand; display: flex; align-items: center; gap: 0.8em; min-width: 0; }
+.icc-clock { grid-area: clock; }
+.icc-weather { grid-area: weather; }
+.icc-feeds { grid-area: feeds; }
+.icc-kpis { grid-area: kpis; }
+.icc-brand-mark { flex: none; width: 4em; height: 4em; object-fit: contain; filter: drop-shadow(0 0 0.5em rgba(79, 124, 138, 0.55)); }
+.icc-brand-text { min-width: 0; }
+.icc-brand-text h1 { margin: 0; font: 700 var(--t-l)/1.1 var(--icc-display); letter-spacing: 0.04em; }
+.icc-brand-line-text { display: inline-block; animation: iccLineIn 0.6s ease-out; }
+@keyframes iccLineIn { from { opacity: 0; transform: translateY(0.35em); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .icc-brand-line-text { animation: none; } }
+.icc-brand-line { margin: 0.3em 0 0; font: 600 var(--t-s)/1.25 var(--icc-body); letter-spacing: 0.08em; color: var(--icc-cyan); }
+.icc-brand-region { display: block; font-size: var(--t-2xl); color: #fff; letter-spacing: 0.05em; overflow-wrap: anywhere; }
+.icc-brand-sub { display: block; font-size: var(--t-l); color: #cfe5ff; letter-spacing: 0.06em; }
+
+.icc-clock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.1em; padding: 0 0.9em; border-left: 1px solid var(--icc-line); border-right: 1px solid var(--icc-line); }
+.icc-clock-date { font-size: var(--t-s); letter-spacing: 0.1em; color: var(--icc-muted); }
+.icc-clock-time { font: 600 var(--t-2xl)/1 var(--icc-display); letter-spacing: 0.04em; color: #fff; font-variant-numeric: tabular-nums; }
+.icc-clock-zone { font-size: var(--t-s); letter-spacing: 0.06em; color: var(--icc-muted); }
+.icc-live { display: inline-flex; align-items: center; gap: 0.4em; margin-top: 0.15em; font: 700 var(--t-s)/1.2 var(--icc-body); letter-spacing: 0.12em; }
+.icc-live i { width: 0.6em; height: 0.6em; border-radius: 50%; background: currentColor; box-shadow: 0 0 0.7em currentColor; }
+.icc-live-live { color: var(--icc-red); }
+.icc-live-live i { animation: iccBlink 1.6s ease-in-out infinite; }
+.icc-live-partial { color: var(--icc-yellow); }
+.icc-live-connecting, .icc-live-down { color: var(--icc-muted); }
+@keyframes iccBlink { 50% { opacity: 0.35; } }
+
+.icc-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.6em; }
+.icc-kpi {
+  position: relative;
+  display: flex; flex-direction: column; justify-content: center; gap: 0.1em;
+  min-width: 0;
+  padding: 0.55em 0.85em;
+  background: var(--icc-panel-2);
+  border: 1px solid color-mix(in srgb, var(--kpi, var(--icc-cyan)) 55%, transparent);
+  box-shadow: inset 0 0 1.6em color-mix(in srgb, var(--kpi, var(--icc-cyan)) 14%, transparent);
+}
+.icc-kpi::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--kpi, var(--icc-cyan)); box-shadow: 0 0 0.8em var(--kpi, var(--icc-cyan)); }
+.icc-kpi-blue { --kpi: var(--icc-blue); }
+.icc-kpi-critical { --kpi: var(--icc-red); }
+.icc-kpi-high { --kpi: var(--icc-orange); }
+.icc-kpi-medium { --kpi: var(--icc-yellow); }
+.icc-kpi-low { --kpi: var(--icc-green); }
+.icc-kpi-safe { --kpi: #22d3ee; }
+.icc-kpi-label { font: 700 var(--t-s)/1.15 var(--icc-body); letter-spacing: 0.06em; color: var(--kpi); overflow-wrap: anywhere; }
+.icc-kpi-value { font: 700 var(--t-2xl)/1.05 var(--icc-display); color: #fff; text-shadow: 0 0 0.5em color-mix(in srgb, var(--kpi) 55%, transparent); font-variant-numeric: tabular-nums; }
+.icc-kpi-delta { font-size: var(--t-s); line-height: 1.25; color: var(--icc-muted); }
+
+.icc-weather { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.8em; padding: 0.5em 0.85em; background: var(--icc-panel-2); border: 1px solid var(--icc-line); min-width: 0; }
+.icc-weather > .icc-state { grid-column: 1 / -1; }
+.icc-weather-main { display: flex; align-items: center; gap: 0.7em; }
+.icc-weather-icon { color: #bae6fd; flex: none; }
+.icc-weather-temp { display: block; font: 700 var(--t-2xl)/1 var(--icc-display); color: #fff; }
+.icc-weather-text, .icc-weather-place { display: block; font-size: var(--t-s); line-height: 1.25; color: var(--icc-muted); }
+.icc-weather-stats { display: grid; grid-template-columns: 1fr; gap: 0.1em; margin: 0; min-width: 0; }
+.icc-weather-stats div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 0.6em; min-width: 0; }
+.icc-weather-stats dt { display: inline-flex; align-items: center; gap: 0.3em; font-size: var(--t-s); color: var(--icc-muted); }
+.icc-weather-stats dd { margin: 0; font-size: var(--t-s); font-weight: 600; text-align: right; }
+
+.icc-feeds { padding: 0.5em 0.85em; background: var(--icc-panel-2); border: 1px solid var(--icc-line); min-width: 0; }
+.icc-feeds-title { display: block; margin-bottom: 0.2em; font: 700 var(--t-s)/1.2 var(--icc-body); letter-spacing: 0.1em; color: var(--icc-cyan); }
+.icc-feeds ul { display: grid; grid-template-columns: 1fr; gap: 0.1em; margin: 0; padding: 0; list-style: none; }
+.icc-feeds li { display: flex; align-items: center; gap: 0.5em; font-size: var(--t-s); color: #cfe0f5; }
+.icc-feeds li span { flex: 1; min-width: 0; }
+.icc-dot { width: 0.6em; height: 0.6em; border-radius: 50%; flex: none; }
+.icc-dot-live { background: var(--icc-green); box-shadow: 0 0 0.6em var(--icc-green); }
+.icc-dot-stale { background: var(--icc-yellow); box-shadow: 0 0 0.6em var(--icc-yellow); }
+.icc-dot-down { background: var(--icc-red); box-shadow: 0 0 0.6em var(--icc-red); }
+.icc-dot-loading { background: var(--icc-muted); animation: iccBlink 1.2s ease-in-out infinite; }
+.icc-feed-state { font-size: var(--t-s); letter-spacing: 0.06em; }
+.icc-feed-live { color: var(--icc-green); }
+.icc-feed-stale { color: var(--icc-yellow); }
+.icc-feed-down { color: var(--icc-red); }
+.icc-feed-loading { color: var(--icc-muted); }
+
+
+/* ---------- Map panel ---------- */
+.icc-map {
+  display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative;
+  background: var(--icc-panel); border: 1px solid var(--icc-line); border-radius: var(--radius, 6px);
+}
+.icc-map:fullscreen { background: var(--icc-bg); padding: 0.5em; height: 100%; }
+.icc-map.icc-map-expanded { position: fixed; inset: 0; z-index: 3000; padding: 0.5em; background: var(--icc-bg); }
+.icc-map-tabs { display: flex; align-items: stretch; justify-content: space-between; flex-wrap: wrap; border-bottom: 1px solid var(--icc-line); }
+.icc-map-tabs [role='tablist'] { display: flex; flex-wrap: wrap; }
+.icc-tab {
+  padding: 0.8em 1em; border: 0; border-bottom: 3px solid transparent; background: transparent;
+  color: #b2c4dd; font: 700 var(--t-s)/1.1 var(--icc-body); letter-spacing: 0.06em; cursor: pointer;
+}
+.icc-tab:hover { color: #fff; }
+.icc-tab.active { color: #fff; background: color-mix(in srgb, var(--icc-cyan) 35%, var(--icc-panel)); border-bottom-color: var(--icc-cyan); }
+.icc-tools { display: flex; gap: 0.15em; align-items: center; padding: 0.2em 0.4em; }
+.icc-tools button { display: inline-flex; align-items: center; gap: 0.4em; min-width: 2.4em; min-height: 2.4em; justify-content: center; padding: 0.3em 0.55em; border: 1px solid transparent; background: transparent; color: #d6e6fb; font: 600 var(--t-s)/1 var(--icc-body); cursor: pointer; }
+.icc-tools button:hover { background: rgba(79, 124, 138, 0.45); color: #fff; border-color: var(--icc-line); }
+
+.icc-viewbar { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5em 0.8em; padding: 0.5em 0.8em; border-bottom: 1px solid var(--icc-line); background: rgba(23, 28, 31, 0.45); }
+.icc-select { display: inline-flex; align-items: center; gap: 0.6em; flex: 0 1 22em; min-width: 0; max-width: 100%; }
+.icc-select span { font: 700 var(--t-s)/1 var(--icc-body); letter-spacing: 0.12em; color: var(--icc-muted); }
+.icc-select select {
+  flex: 1 1 auto; width: 100%; min-width: 0; max-width: 100%; text-overflow: ellipsis; padding: 0.4em 0.7em; border: 1px solid var(--icc-line-strong); border-radius: 3px;
+  background: #1d2427; color: #fff; font: 600 var(--t-m)/1.3 var(--icc-body); cursor: pointer;
+}
+.icc-select select option, .icc-select select optgroup { background: #1d2427; color: #fff; font-size: var(--t-m); }
+.icc-backbtn, .icc-autobtn {
+  display: inline-flex; align-items: center; gap: 0.45em; padding: 0.4em 0.8em; border: 1px solid var(--icc-line-strong); border-radius: 3px;
+  background: rgba(79, 124, 138, 0.28); color: #fff; font: 700 var(--t-s)/1.2 var(--icc-body); letter-spacing: 0.04em; cursor: pointer;
+}
+.icc-backbtn:hover, .icc-autobtn:hover { background: rgba(79, 124, 138, 0.55); }
+.icc-autobtn { background: transparent; color: var(--icc-muted); }
+.icc-autobtn i { width: 0.7em; height: 0.7em; border-radius: 50%; border: 2px solid currentColor; }
+.icc-autobtn.active { color: #fff; border-color: var(--icc-green); }
+.icc-autobtn.active i { background: var(--icc-green); border-color: var(--icc-green); box-shadow: 0 0 0.6em var(--icc-green); }
+.icc-viewhint { flex: 1 1 18em; margin: 0; font-size: var(--t-s); line-height: 1.3; color: var(--icc-muted); }
+
+.icc-map-toolbar { display: flex; align-items: center; gap: 0.7em; flex-wrap: wrap; padding: 0.5em 0.8em; border-bottom: 1px solid var(--icc-line); background: rgba(23, 28, 31, 0.55); }
+.icc-search { position: relative; display: flex; align-items: center; gap: 0.5em; flex: 1 1 17em; max-width: 30em; padding: 0 0.7em; border: 1px solid var(--icc-line-strong); background: rgba(29, 36, 39, 0.85); }
+.icc-search svg { color: var(--icc-cyan); flex: none; }
+.icc-search input { flex: 1; min-width: 0; padding: 0.5em 0; border: 0; background: transparent; color: var(--icc-text); font: 400 var(--t-m)/1.3 var(--icc-body); }
+.icc-search input::placeholder { color: #8ea3c0; }
+.icc-search input:focus-visible { outline: none; }
+.icc-search:focus-within { border-color: var(--icc-cyan); box-shadow: 0 0 0 1px var(--icc-cyan); }
+.icc-search > button { display: grid; place-items: center; border: 0; background: transparent; color: var(--icc-muted); cursor: pointer; }
+.icc-search-results { position: absolute; z-index: 1500; left: -1px; right: -1px; top: calc(100% + 2px); margin: 0; padding: 0.2em 0; list-style: none; background: #1d2427; border: 1px solid var(--icc-line-strong); box-shadow: 0 1em 2em rgba(0, 0, 0, 0.6); max-height: 20em; overflow: auto; }
+.icc-search-results button { display: block; width: 100%; padding: 0.55em 0.8em; border: 0; background: transparent; text-align: left; color: var(--icc-text); cursor: pointer; }
+.icc-search-results button:hover, .icc-search-results button:focus-visible { background: rgba(79, 124, 138, 0.35); }
+.icc-search-results b { display: block; font-size: var(--t-m); }
+.icc-search-results span, .icc-search-empty { font-size: var(--t-s); color: var(--icc-muted); }
+.icc-search-empty { padding: 0.6em 0.8em; }
+.icc-chips { display: flex; flex-wrap: wrap; gap: 0.4em; }
+.icc-chip { display: inline-flex; align-items: center; gap: 0.45em; padding: 0.3em 0.8em; border: 1px solid var(--icc-line); border-radius: 2em; background: rgba(29, 36, 39, 0.7); color: #d6e6fb; font: 600 var(--t-s)/1.2 var(--icc-body); cursor: pointer; }
+.icc-chip b { color: var(--icc-cyan); }
+.icc-chip:hover { border-color: var(--icc-line-strong); color: #fff; }
+.icc-chip.active { background: color-mix(in srgb, var(--icc-cyan) 38%, var(--icc-panel)); border-color: var(--icc-cyan); color: #fff; }
+.icc-chip.active b { color: #fff; }
+
+.icc-map-stage { position: relative; flex: 1 1 auto; min-height: 30em; background: #101416; }
+.icc-map-stage .gis-app-wrapper.gis-embedded { position: absolute; inset: 0; height: auto; min-height: 0; }
+.icc-controls-dock-content { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
+.icc-controls-dock-content :is(.icc-controls-portal, .icc-ctl) { position: absolute; inset: 0; pointer-events: none; }
+.icc-controls-dock-content :is(.icc-controls-portal, .icc-ctl) .gis-controls-overlay { pointer-events: auto; top: 0.6em; right: 0.6em; width: min(21em, calc(100% - 1.2em)); max-height: calc(100% - 1.2em); }
+.icc-controls-dock-content :is(.icc-controls-portal, .icc-ctl) .gis-controls-overlay.collapsed { width: 8em !important; }
+.icc-controls-dock-content :is(.icc-controls-portal, .icc-ctl) .gis-panel-body { min-height: 0; overflow-y: auto; }
+.icc-controls-dock-content .icc-authority-map-controls .gis-panel-body { gap: 0.55em !important; padding: 0.6em; }
+.icc-controls-dock-content .icc-authority-map-controls .gis-map-display { order: 0; }
+.icc-controls-dock-content .icc-authority-map-controls .gis-focus-presets { order: 1; }
+.icc-controls-dock-content .icc-authority-map-controls .gis-layer-controls { order: 2; }
+.icc-controls-dock-content .icc-authority-map-controls .gis-arrival-controls { order: 3; }
+.icc-controls-dock-content .icc-authority-map-controls .gis-destination-controls { order: 4; }
+.icc-controls-dock-content .icc-authority-map-controls .gis-route-request { order: 5; }
+.icc-controls-dock-content .icc-authority-map-controls .gis-severity-controls { order: 6; }
+.icc-controls-dock-content .icc-authority-map-controls .gis-reset-controls { order: 7; }
+.icc-controls-dock-content .icc-authority-map-controls .gis-annotation-controls { order: 8; }
+.icc-controls-dock-content :is(.icc-controls-portal, .icc-ctl) .gis-controls-section { min-width: 0; margin: 0; padding: 0.5em; }
+.icc-controls-dock-content :is(.icc-controls-portal, .icc-ctl) .gis-controls-section .gis-section-subtitle { display: block; margin-bottom: 0.4em; }
+.icc-controls-dock-content :is(.icc-controls-portal, .icc-ctl) .gis-controls-section .text-muted,
+.icc-controls-dock-content :is(.icc-controls-portal, .icc-ctl) .gis-controls-section small { color: var(--icc-muted) !important; }
+.icc-controls-dock-content :is(.icc-controls-portal, .icc-ctl) .gis-addpoint-banner { pointer-events: none; }
+
+.icc-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.3em 1em;
+  padding: 0.5em 0.9em; background: rgba(23, 28, 31, 0.9); border-bottom: 1px solid var(--icc-line);
+  font-size: var(--t-s);
+}
+.icc-legend b { font: 700 var(--t-s)/1.2 var(--icc-body); letter-spacing: 0.06em; color: var(--icc-cyan); }
+.icc-legend small { color: var(--icc-muted); font-size: var(--t-s); }
+.icc-legend-ramp { width: 14em; height: 0.8em; background: linear-gradient(90deg, #5ac8fa, #00c853, #ffd600, #ff6d00, #d50000, #aa00ff); border-radius: 2px; }
+.icc-legend-ends { display: inline-flex; gap: 0.8em; color: var(--icc-muted); }
+.icc-legend em { font-style: normal; font-size: var(--t-s); }
+.icc-legend .icc-legend-row { display: inline-flex; align-items: center; gap: 0.5em; color: #d6e6fb; }
+.icc-legend-row i { width: 0.9em; height: 0.9em; border-radius: 50%; }
+.icc-river-tip.leaflet-tooltip, .icc-state-tip.leaflet-tooltip { padding: 0.3em 0.65em; background: rgba(23, 28, 31, 0.94); border: 1px solid var(--icc-line-strong); color: #fff; box-shadow: none; }
+.icc-river-tip.leaflet-tooltip::before, .icc-state-tip.leaflet-tooltip::before { display: none; }
+.icc-river-tip b, .icc-river-tip span, .icc-state-tip b, .icc-state-tip span, .icc-state-tip em { display: block; white-space: nowrap; font-family: var(--icc-body); font-size: var(--t-s); }
+.icc-river-tip span, .icc-state-tip span { color: #c5d6ee; }
+.icc-state-tip em { font-style: normal; color: var(--icc-cyan); }
+
+/* State badges on the national map: one per state with active incidents. */
+.icc-state-badge-wrap { background: none; border: 0; }
+.icc-state-badge {
+  display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%;
+  border: 3px solid var(--badge, var(--icc-cyan)); background: rgba(23, 28, 31, 0.88);
+  color: #fff; font: 700 var(--t-l)/1 var(--icc-display);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--badge, var(--icc-cyan)) 28%, transparent), 0 0 22px var(--badge, var(--icc-cyan));
+  cursor: pointer; transition: transform 0.15s ease;
+}
+.icc-state-badge:hover { transform: scale(1.12); }
+.icc-state-badge-critical { --badge: var(--icc-red); }
+.icc-state-badge-high { --badge: var(--icc-orange); }
+.icc-state-badge-medium { --badge: var(--icc-yellow); }
+.icc-state-badge-low { --badge: var(--icc-green); }
+
+/* ---------- Right column ---------- */
+.icc-side { display: flex; flex-direction: column; gap: 0.7em; min-width: 0; min-height: 0; overflow: hidden auto; scrollbar-width: thin; scrollbar-color: rgba(79, 124, 138, 0.4) transparent; }
+.icc-side > .icc-panel { flex: 0 0 auto; }
+.icc-sat .icc-panel-body { padding: 0.5em; }
+.icc-sat-frame { position: relative; flex: 1 1 auto; min-height: 14em; border: 1px solid var(--icc-line); background: #101416; }
+.icc-sat-map { position: absolute; inset: 0; background: #101416; }
+.icc-dark-tiles { filter: invert(1) hue-rotate(180deg) brightness(1.1) contrast(0.95) saturate(0.5); }
+.icc-alerts .icc-panel-body { max-height: none; overflow: visible; }
+.icc-river-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6em; }
+.icc-river-name { display: block; font-size: var(--t-s); color: var(--icc-muted); }
+.icc-river-value { font: 700 var(--t-xl)/1.1 var(--icc-display); color: #fff; }
+.icc-river-value small { font: 500 var(--t-s) var(--icc-body); color: var(--icc-muted); }
+.icc-river-stats { display: flex; flex-wrap: wrap; gap: 0.1em 1em; margin: 0; font-size: var(--t-s); color: #d6e6fb; }
+.icc-river-list { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(15em, 1fr)); gap: 0.3em; }
+.icc-river-list button { display: flex; align-items: center; gap: 0.5em; width: 100%; padding: 0.35em 0.6em; border: 1px solid var(--icc-line); background: transparent; color: #d6e6fb; font: 500 var(--t-s)/1.25 var(--icc-body); text-align: left; cursor: pointer; }
+.icc-river-list button span { flex: 1; min-width: 0; }
+.icc-river-list button.active, .icc-river-list button:hover { background: rgba(79, 124, 138, 0.35); border-color: var(--icc-line-strong); color: #fff; }
+
+.icc-chart-box { width: 100%; min-width: 0; }
+.icc-chart { display: block; max-width: 100%; }
+.icc-chart-grid { stroke: rgba(148, 169, 198, 0.22); stroke-width: 1; }
+.icc-chart-label { fill: #b8c9e0; font-family: var(--icc-body); font-size: var(--t-s); }
+.icc-chart-label-strong { fill: #e8f1ff; font-weight: 700; }
+.icc-chart-today { stroke: rgba(232, 241, 255, 0.4); stroke-dasharray: 3 4; }
+
+.icc-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.6em; }
+.icc-alert-row { padding-bottom: 0.6em; border-bottom: 1px solid rgba(79, 124, 138, 0.13); }
+.icc-alert-row:last-child { border-bottom: 0; }
+.icc-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2em 0.6em; margin-bottom: 0.25em; font-size: var(--t-s); color: var(--icc-muted); }
+.icc-row-meta time { margin-left: auto; white-space: nowrap; }
+.icc-alert-row p { margin: 0; font-size: var(--t-m); line-height: 1.35; color: #dbe8fb; }
+.icc-quake-row { display: flex; align-items: flex-start; gap: 0.7em; padding-bottom: 0.5em; border-bottom: 1px solid rgba(79, 124, 138, 0.13); }
+.icc-quake-row p { margin: 0; font-size: var(--t-m); }
+.icc-quake-row span { font-size: var(--t-s); color: var(--icc-muted); }
+.icc-quake-row .icc-badge { margin-top: 0.1em; min-width: 4.4em; text-align: center; }
+
+/* ---------- Bottom panels ---------- */
+.icc-bottom {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.7em;
+  align-items: stretch;
+}
+.icc-bottom > .icc-panel { grid-column: span 4; }
+.icc-bottom .icc-panel-body { max-height: 27em; }
+.icc-bottom-national > .icc-incidents { grid-column: span 7; }
+.icc-bottom-national > .icc-resources { grid-column: span 5; }
+.icc-bottom-national > .icc-trend { grid-column: span 5; }
+.icc-bottom-national > .icc-forecast { grid-column: span 7; }
+.icc-bottom-local > .icc-incidents { grid-column: span 7; }
+.icc-bottom-local > .icc-resources { grid-column: span 5; }
+.icc-bottom-local > .icc-forecast { grid-column: span 12; }
+.icc-bottom-local > .icc-forecast .icc-forecast-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(22em, 1fr)); gap: 0.6em 1.6em; }
+
+.icc-summary { display: flex; flex-direction: column; gap: 0.1em; }
+.icc-summary strong { font: 700 var(--t-2xl)/1.05 var(--icc-display); color: #fff; }
+.icc-summary strong small { font-size: var(--t-m); color: var(--icc-muted); font-weight: 600; }
+.icc-summary span { font-size: var(--t-s); color: var(--icc-muted); }
+.icc-list li { min-width: 0; }
+.icc-row-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.1em 0.6em; margin-bottom: 0.25em; }
+.icc-row-line b { font-size: var(--t-m); min-width: 0; display: inline-flex; align-items: center; gap: 0.35em; }
+.icc-row-line span { font-size: var(--t-s); color: var(--icc-muted); }
+.icc-list li small { display: block; margin-top: 0.25em; font-size: var(--t-s); line-height: 1.3; color: var(--icc-muted); }
+.icc-forecast-list li, .icc-resource-list li, .icc-site-list li, .icc-pop-list li, .icc-rank-list li { padding-bottom: 0.6em; border-bottom: 1px solid rgba(79, 124, 138, 0.13); }
+.icc-forecast-list p { margin: 0; font-size: var(--t-m); color: #dbe8fb; line-height: 1.35; }
+.icc-roadline { display: flex; flex-wrap: wrap; gap: 0.3em 1em; font-size: var(--t-s); color: var(--icc-muted); }
+.icc-roadline b { color: #fff; font-size: var(--t-l); }
+.icc-table-wrap { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: rgba(79, 124, 138, 0.4) transparent; }
+.icc-table { width: 100%; border-collapse: collapse; font-size: var(--t-s); }
+.icc-table th { position: sticky; top: 0; z-index: 1; padding: 0.4em 0.6em; text-align: left; background: #1d2427; color: var(--icc-muted); font: 700 var(--t-s)/1.2 var(--icc-body); letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid var(--icc-line); white-space: nowrap; }
+.icc-table td { padding: 0.5em 0.6em; border-bottom: 1px solid rgba(79, 124, 138, 0.1); color: #dbe8fb; vertical-align: top; }
+.icc-table tbody tr:hover td { background: rgba(79, 124, 138, 0.16); }
+.icc-cell-wrap { min-width: 9em; max-width: 16em; }
+.icc-nowrap { white-space: nowrap; }
+.icc-idbtn { padding: 0; border: 0; background: none; color: var(--icc-cyan); font: 700 var(--t-s) var(--icc-body); cursor: pointer; text-decoration: underline; text-decoration-style: dotted; }
+.icc-idbtn:hover { color: #fff; }
+.icc-legend-inline { display: flex; flex-wrap: wrap; gap: 0.2em 1em; margin: 0; padding: 0; list-style: none; font-size: var(--t-s); color: #d6e6fb; }
+.icc-legend-inline li { display: inline-flex; align-items: center; gap: 0.4em; }
+.icc-legend-inline i { width: 0.8em; height: 0.8em; border-radius: 50%; }
+
+/* National panels */
+.icc-type-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5em; margin: 0; padding: 0; list-style: none; }
+.icc-type-grid li { display: flex; flex-direction: column; align-items: center; gap: 0.1em; padding: 0.6em 0.3em; border: 1px solid var(--icc-line); background: var(--icc-panel-2); text-align: center; color: var(--icc-muted); }
+.icc-type-grid li.icc-type-on { color: #fff; border-color: var(--icc-line-strong); background: rgba(79, 124, 138, 0.22); }
+.icc-type-grid li svg { color: var(--icc-cyan); }
+.icc-type-grid strong { font: 700 var(--t-xl)/1.05 var(--icc-display); }
+.icc-type-grid span { font-size: var(--t-s); line-height: 1.2; }
+.icc-rank-list { gap: 0.5em; }
+.icc-rank-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6em; width: 100%; padding: 0.1em 0; margin-bottom: 0.2em; border: 0; background: none; color: #fff; font: 600 var(--t-m)/1.25 var(--icc-body); text-align: left; cursor: pointer; }
+.icc-rank-row:hover .icc-rank-name { color: var(--icc-cyan); text-decoration: underline; }
+.icc-rank-row b { font: 700 var(--t-l) var(--icc-display); }
+
+.icc-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.3em 1.5em; padding: 0.2em 0.3em 0; font-size: var(--t-s); line-height: 1.35; color: var(--icc-muted); }
+
+/* ---------- Embedded SENTRY map ---------- */
+/* Keep the embedded map on the same charcoal and muted teal theme as the rest of SENTRY. */
+.india-command-center .icc-map-stage .gis-app-wrapper,
+.india-command-center .icc-controls-dock-content .gis-app-wrapper {
+  --bg-app: var(--bg-primary, #101416);
+  --bg-sidebar: var(--bg-secondary, #171c1f);
+  --bg-card: var(--surface, #1d2427);
+  --bg-elevated: var(--surface-elevated, #242d31);
+  --accent: var(--info, #4f7c8a);
+  --accent-strong: var(--info, #4f7c8a);
+  --accent-dim: color-mix(in srgb, var(--info, #4f7c8a) 55%, var(--bg-secondary, #171c1f));
+  --accent-glow: rgba(79, 124, 138, 0.26);
+  --accent-glow-soft: rgba(79, 124, 138, 0.12);
+  --border-subtle: var(--border, #303b40);
+  --border-accent: var(--info, #4f7c8a);
+  --color-critical: var(--critical, #d64545);
+  --color-high: var(--high-risk, #d97732);
+  --color-warning: var(--warning, #c9a227);
+  --color-operational: var(--safe, #3d8b63);
+  --color-info: var(--info, #4f7c8a);
+  --color-primary: var(--info, #4f7c8a);
+  --color-selected: var(--info, #4f7c8a);
+  --color-hover: var(--border, #303b40);
+  --text-primary: #f2f4f5;
+  --text-secondary: #b6c0c4;
+  --text-muted: #7f8a8f;
+  --fs-2xs: var(--t-s);
+  --fs-xs: var(--t-s);
+  --fs-sm: var(--t-m);
+  --fs-base: var(--t-m);
+  --fs-md: var(--t-l);
+  --fs-lg: var(--t-xl);
+  --fs-xl: var(--t-2xl);
+  font-size: var(--t-s);
+}
+.india-command-center .icc-map-stage .gis-app-wrapper .leaflet-container { background: #101416; font-size: var(--t-s); line-height: 1.3; }
+.india-command-center .icc-map-stage .gis-app-wrapper .gis-left-rail,
+.india-command-center .icc-map-stage .gis-app-wrapper .gis-controls-overlay { background: var(--bg-secondary) !important; border-color: var(--icc-line) !important; }
+.india-command-center .icc-map-stage .gis-app-wrapper .gis-header { background: var(--bg-secondary); border-bottom: 1px solid var(--icc-line); }
+
+/* gis.css and Bootstrap set some text in fixed pixels (8-17px). Those rules are lifted to the page's minimum size.
+   !important is needed because a few of the source rules use it too, and inline styles on map markers. */
+.india-command-center .gis-app-wrapper :is(
+  .gis-header-title, .gis-brand-name, .gis-header-meta, .gis-header-meta-extra, .gis-coord-readout, .gis-coord-zoom,
+  .gis-panel-title, .gis-hud-title, .gis-hud-label, .gis-hud-val, .gis-hud-footer, .gis-section-subtitle,
+  .gis-legend-row, .gis-legend-section-title, .gis-legend-subtitle, .gis-legend-context, .gis-legend-empty, .gis-legend-note,
+  .gis-btn-compact, .gis-btn-filter, .gis-style-pill, .gis-dock-btn, .gis-ticker-text,
+  .gis-route-request__button, .gis-route-request__origin, .gis-route-request__summary, .gis-route-request__error,
+  .gis-destination-detail, .gis-destination-detail strong,
+  .gis-focus-preset, .gis-focus-help, .gis-focus-preset-intent, .gis-addpoint-count,
+  .gis-loader-label, .gis-loader-sub, .gis-inline-loader__label,
+  .gis-userpoint-heading, .gis-userpoint-label, .gis-userpoint-input, .gis-userpoint-textarea, .gis-userpoint-coord,
+  .gis-userpoint-save, .gis-userpoint-delete, .gis-point-empty, .gis-point-name, .gis-point-del,
+  .gis-offline-title, .gis-offline-dl-btn, .gis-offline-sub, .gis-offline-zone,
+  .gis-flood-start, .gis-flood-title, .gis-flood-clock, .gis-flood-x, .gis-flood-btn, .gis-flood-k,
+  .gis-map-provider-fallback, .gis-map-compass-n, .gis-map-scale, .gis-map-overview-footer,
+  .gis-incident-label__card strong, .gis-incident-label__card small,
+  .gis-live-incident-callout strong, .gis-live-incident-callout small,
+  .badge, .btn, .btn-sm, .alert, small, .small, .form-control, .form-select, .form-check-label
+) { font-size: var(--t-s) !important; }
+.india-command-center .gis-app-wrapper :is(.gis-hud-val, .gis-header-title, .gis-brand-name) { font-size: var(--t-m) !important; }
+.india-command-center .gis-app-wrapper [style*='font-size'],
+.india-command-center .leaflet-popup-content [style*='font-size'] { font-size: var(--t-s) !important; }
+.india-command-center .leaflet-tooltip.gis-disaster-type-label,
+.india-command-center .leaflet-tooltip.gis-disaster-type-label.sev-critical { font-size: var(--t-s) !important; }
+.india-command-center .leaflet-container,
+.india-command-center .leaflet-popup-content,
+.india-command-center .leaflet-tooltip,
+.india-command-center .leaflet-control-attribution,
+.india-command-center .leaflet-control-attribution a,
+.india-command-center .leaflet-control-attribution span,
+.india-command-center .leaflet-control-scale-line,
+.india-command-center .leaflet-container a.leaflet-popup-close-button { font-size: var(--t-s) !important; line-height: 1.3; }
+.india-command-center .leaflet-control-zoom a { font-size: 22px !important; }
+/* Map popups: wide enough for 18px text, with the type and severity tags wrapping under the title instead of over it. */
+.india-command-center .leaflet-popup-content-wrapper { max-width: min(27em, calc(100vw - 28px)) !important; }
+.india-command-center .leaflet-popup-content { width: auto !important; min-width: min(20em, calc(100vw - 60px)); }
+.india-command-center .gis-popup-header, .india-command-center .gis-popup-tags { flex-wrap: wrap; }
+.india-command-center .btn, .india-command-center .btn-sm,
+.india-command-center .dropdown-menu, .india-command-center .dropdown-item { font-size: var(--t-s); }
+
+/* ---------- Responsive ---------- */
+/* Below 2200px the three side panels move under the map, so the map keeps the full width. */
+@media (max-width: 2199px) {
+  .icc-root {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas:
+      'header'
+      'map'
+      'side'
+      'bottom'
+      'foot';
+  }
+  .icc-side { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; overflow: visible; }
+}
+/* Below 1700px the header folds into two rows. */
+@media (max-width: 1699px) {
+  .icc-brand-text p { display: none; }
+  .icc-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'brand clock'
+      'weather feeds'
+      'kpis kpis';
+  }
+}
+@media (max-width: 1399px) {
+  .icc-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .icc-alerts { grid-column: 1 / -1; }
+  .icc-bottom > .icc-panel,
+  .icc-bottom-national > .icc-panel,
+  .icc-bottom-local > .icc-panel { grid-column: span 6; }
+  .icc-bottom-national > .icc-incidents,
+  .icc-bottom-local > .icc-incidents,
+  .icc-bottom-national > .icc-forecast,
+  .icc-bottom-local > .icc-forecast,
+  .icc-bottom-national > .icc-pop-states { grid-column: 1 / -1; }
+}
+/* Below 1200px the six figures wrap into two rows of three. */
+@media (max-width: 1199px) {
+  .icc-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* Below 1100px everything stacks. */
+@media (max-width: 1099px) {
+  .icc-root {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: 'header' 'map' 'side' 'bottom' 'foot';
+  }
+  .icc-header {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'brand' 'clock' 'weather' 'feeds' 'kpis';
+  }
+  .icc-clock { flex-direction: row; flex-wrap: wrap; justify-content: space-between; gap: 0.2em 1em; padding: 0.4em 0; border: 0; border-top: 1px solid var(--icc-line); border-bottom: 1px solid var(--icc-line); }
+  .icc-map { height: clamp(560px, 88vh, 860px); }
+  .icc-bottom { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .icc-bottom > .icc-panel,
+  .icc-bottom-national > .icc-panel,
+  .icc-bottom-local > .icc-panel { grid-column: span 1; }
+  .icc-bottom-national > .icc-incidents,
+  .icc-bottom-local > .icc-incidents,
+  .icc-bottom-national > .icc-forecast,
+  .icc-bottom-local > .icc-forecast,
+  .icc-bottom-national > .icc-pop-states { grid-column: 1 / -1; }
+}
+@media (max-width: 759px) {
+  .icc-root { padding: 0.5em; gap: 0.5em; }
+  .icc-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .icc-side { grid-template-columns: minmax(0, 1fr); }
+  .icc-bottom { grid-template-columns: minmax(0, 1fr); }
+  .icc-bottom > .icc-panel,
+  .icc-bottom-national > .icc-panel,
+  .icc-bottom-local > .icc-panel { grid-column: 1 / -1; }
+  .icc-weather { grid-template-columns: minmax(0, 1fr); }
+  .icc-tab { padding: 0.7em 0.7em; }
+  .icc-map { height: clamp(620px, 92vh, 900px); }
+  .icc-type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .icc-live-live i, .icc-dot-loading { animation: none; }
+  .icc-state-badge { transition: none; }
+}
+@media print {
+  .india-command-center { background: #fff; color: #000; }
+}
+
+/* ---------- 3D map (MapLibre) ---------- */
+.icc-gl { position: absolute; inset: 0; z-index: 1300; background: #171c1f; }
+.icc-gl-canvas { position: absolute; inset: 0; }
+.icc-gl-controls { position: absolute; z-index: 6; top: 10px; left: 10px; display: flex; border: 1px solid var(--icc-line-strong); background: rgba(23, 28, 31, 0.88); }
+.icc-gl-controls button { padding: 0.35em 0.9em; border: 0; background: transparent; color: #d6e6fb; font: 700 var(--t-s)/1.2 var(--icc-body); cursor: pointer; }
+.icc-gl-controls button.active { background: var(--icc-cyan); color: #04101e; }
+.icc-gl-legend { position: absolute; z-index: 6; right: 10px; bottom: 40px; margin: 0; padding: 0.5em 0.8em; list-style: none; background: rgba(23, 28, 31, 0.82); border: 1px solid var(--icc-line); font-size: var(--t-s); line-height: 1.35; color: #d6e6fb; }
+.icc-gl-legend li { display: flex; align-items: center; gap: 0.5em; }
+.icc-gl-legend i { flex: none; width: 1.1em; height: 0.35em; border-radius: 2px; }
+.icc-gl-legend i.ring { height: 0.9em; width: 0.9em; border-radius: 50%; border: 2px solid #fb923c; background: rgba(251, 146, 60, 0.25); }
+.icc-gl-tip { position: absolute; z-index: 7; pointer-events: none; padding: 0.3em 0.65em; background: rgba(23, 28, 31, 0.94); border: 1px solid var(--icc-line-strong); color: #fff; font-size: var(--t-s); }
+.icc-gl-tip b, .icc-gl-tip span, .icc-gl-tip em { display: block; white-space: nowrap; font-style: normal; }
+.icc-gl-tip em { color: var(--icc-cyan); }
+.india-command-center .maplibregl-popup-content { background: #1d2427; color: #fff; border: 1px solid var(--icc-line-strong); font: 500 var(--t-s)/1.35 var(--icc-body); padding: 0.6em 1.8em 0.6em 0.8em; }
+.india-command-center .maplibregl-popup-tip { border-top-color: #1d2427; border-bottom-color: #1d2427; }
+.india-command-center .maplibregl-popup-close-button { color: #fff; font-size: 22px; }
+.india-command-center .maplibregl-ctrl-attrib, .india-command-center .maplibregl-ctrl-attrib a, .india-command-center .maplibregl-ctrl-scale { font-size: var(--t-s) !important; line-height: 1.3; }
+.india-command-center .maplibregl-ctrl-group button { width: 36px; height: 36px; }
+
+.icc-gl-legend i.heat { height: 0.9em; width: 1.4em; background: linear-gradient(90deg, #4ade80, #facc15, #fb923c, #f87171); }
+.icc-gl-legend i.icon { height: 0.9em; width: 0.9em; border-radius: 50%; border: 2px solid; background: #171c1f; }
+.icc-gl-legend { columns: 2; column-gap: 1.2em; max-width: calc(100% - 20px); }
+.icc-gl-legend li { break-inside: avoid; }
+
+.icc-gl-controls { z-index: 8; }
+.icc-gl-controls button:disabled { opacity: 0.5; }
+.icc-gl-layers { position: absolute; z-index: 9; top: 58px; left: 10px; margin: 0; padding: 0.5em 0.8em; list-style: none; background: rgba(23, 28, 31, 0.95); border: 1px solid var(--icc-line-strong); font-size: var(--t-s); color: #d6e6fb; }
+.icc-gl-layers label { display: flex; align-items: center; gap: 0.5em; padding: 0.15em 0; cursor: pointer; }
+.icc-gl-layers input { width: 1.1em; height: 1.1em; accent-color: var(--icc-cyan); }
+.icc-gl-draw { position: absolute; z-index: 9; top: 58px; left: 10px; display: grid; gap: 0.45em; width: min(24em, calc(100% - 20px)); padding: 0.7em 0.9em; background: rgba(23, 28, 31, 0.96); border: 1px solid var(--icc-line-strong); font-size: var(--t-s); color: #d6e6fb; }
+.icc-gl-draw label { display: grid; gap: 0.15em; }
+.icc-gl-draw input, .icc-gl-draw select { padding: 0.3em 0.5em; border: 1px solid var(--icc-line-strong); background: #1d2427; color: #fff; font: 500 var(--t-s)/1.3 var(--icc-body); }
+.icc-gl-draw-actions { display: flex; gap: 0.5em; }
+.icc-gl-draw-actions button { flex: 1; padding: 0.4em 0.6em; border: 1px solid var(--icc-line-strong); background: transparent; color: #fff; font: 700 var(--t-s)/1.2 var(--icc-body); cursor: pointer; }
+.icc-gl-draw-actions button.primary { background: var(--icc-cyan); color: #04101e; border-color: var(--icc-cyan); }
+.icc-gl-draw-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+.icc-gl-error { margin: 0; color: #fda4a4; }
+.icc-gl-notice { position: absolute; z-index: 9; top: 10px; left: 50%; transform: translateX(-50%); width: min(40em, calc(100% - 140px)); margin: 0; padding: 0.5em 0.8em; background: color-mix(in srgb, var(--warning, #c9a227) 16%, var(--bg-secondary, #171c1f)); border: 1px solid var(--warning, #c9a227); color: #f2e1a4; font-size: var(--t-s); line-height: 1.3; }
+.icc-gl-notice button { margin-left: 0.6em; padding: 0.1em 0.5em; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.icc-gl-legend i.area { height: 0.9em; width: 1.2em; border: 2px solid #fb923c; background: rgba(251, 146, 60, 0.28); border-radius: 3px; }
+
+/* ---------- 3D globe (CesiumJS) ---------- */
+.icc-globe { position: absolute; inset: 0; z-index: 1300; background: #171c1f; }
+.icc-globe-canvas { position: absolute; inset: 0; }
+.icc-globe-canvas .cesium-viewer, .icc-globe-canvas .cesium-viewer-cesiumWidgetContainer, .icc-globe-canvas .cesium-widget { width: 100%; height: 100%; }
+.icc-globe-status { position: absolute; z-index: 5; top: 10px; left: 10px; max-width: min(46em, calc(100% - 20px)); margin: 0; padding: 0.4em 0.7em; background: rgba(23, 28, 31, 0.88); border: 1px solid var(--icc-line-strong); color: #d6e6fb; font-size: var(--t-s); line-height: 1.3; }
+.icc-globe-status.good { border-color: var(--icc-green); }
+.icc-globe-pick { position: absolute; z-index: 6; right: 10px; top: 10px; width: min(22em, calc(100% - 20px)); padding: 0.6em 0.8em; background: rgba(23, 28, 31, 0.96); border: 1px solid var(--icc-line-strong); color: #fff; font-size: var(--t-s); line-height: 1.35; }
+.icc-globe-pick b { display: block; font-size: var(--t-m); }
+.icc-globe-pick button { margin-top: 0.4em; padding: 0.2em 0.7em; border: 1px solid var(--icc-line-strong); background: transparent; color: #fff; font: 600 var(--t-s) var(--icc-body); cursor: pointer; }
+.india-command-center .cesium-widget-credits, .india-command-center .cesium-credit-text, .india-command-center .cesium-credit-textContainer { font-size: var(--t-s) !important; }
+.india-command-center .cesium-widget-credits { background: rgba(23, 28, 31, 0.82); color: #cfe0f5; }
+
+.icc-globe-pilot { position: absolute; z-index: 6; right: 10px; bottom: 44px; max-width: min(34em, calc(100% - 20px)); padding: 0.5em 0.8em; background: rgba(23, 28, 31, 0.92); border: 1px solid var(--icc-line-strong); color: #d6e6fb; font-size: var(--t-s); line-height: 1.35; }
+.icc-globe-pilot b { display: block; color: #fff; }
+.icc-globe-pilot button { margin-top: 0.4em; padding: 0.2em 0.7em; border: 1px solid var(--icc-line-strong); background: transparent; color: #fff; font: 600 var(--t-s) var(--icc-body); cursor: pointer; }
+.icc-globe-key { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2em 0.5em; margin-top: 0.2em; }
+.icc-globe-key i { display: inline-block; width: 1em; height: 0.7em; border-radius: 2px; margin-left: 0.4em; }
+
+
+/* Controls shared by both 3D maps; the globe status line moves down to make room for them. */
+.icc-globe .icc-gl-controls { z-index: 8; }
+.icc-globe .icc-globe-status { top: 58px; }
+/* The Live Map's own left-hand panel (Situation, Map key) is removed on this page; the controls panel on the right stays. */
+.india-command-center .icc-map-stage .gis-app-wrapper .gis-left-rail { display: none !important; }
+
+.icc-subhead { margin: 0.5em 0 0; font: 700 var(--t-s)/1.2 var(--icc-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--icc-cyan); }
+
+/* ---------- Incident arrival animation (rings, arcs, callout and counter, after the reference video) ---------- */
+.icc-hits { position: absolute; z-index: 8; left: 12px; bottom: 44px; display: grid; gap: 0.1em; pointer-events: none; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.8); }
+.icc-hits-badge { justify-self: start; padding: 0.05em 0.6em; background: #dc2626; color: #fff; font: 700 var(--t-s)/1.3 var(--icc-body); letter-spacing: 0.1em; }
+.icc-hits-badge i { font-style: normal; margin-right: 0.3em; }
+.icc-hits-title { color: #fff; font: 700 var(--t-l)/1.1 var(--icc-display); letter-spacing: 0.06em; }
+.icc-hits-count { color: var(--icc-red); font: 700 26px/1 var(--icc-display); letter-spacing: 0.02em; animation: iccHitsPop 0.45s ease-out; }
+.icc-hits-count em { font-style: normal; color: #fff; font-size: 20px; }
+@keyframes iccHitsPop { 0% { transform: translateY(-0.5em) scale(1.35); opacity: 0.2; } 100% { transform: none; opacity: 1; } }
+.icc-flash { position: absolute; inset: 0; z-index: 5; pointer-events: none; box-shadow: inset 0 0 160px 40px rgba(220, 38, 38, 0.65); background: radial-gradient(circle at 50% 50%, rgba(220, 38, 38, 0.18), transparent 60%); animation: iccFlash 1.1s ease-out forwards; }
+@keyframes iccFlash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+.icc-pulse { --c: var(--icc-red); position: relative; width: 0; height: 0; pointer-events: none; }
+.icc-pulse i { position: absolute; border-radius: 50%; opacity: 0; }
+.icc-pulse .big { left: calc(-110px * var(--fx-k, 1)); top: calc(-110px * var(--fx-k, 1)); width: calc(220px * var(--fx-k, 1)); height: calc(220px * var(--fx-k, 1)); border: 4px solid var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); animation: iccBig 1.9s cubic-bezier(0.1, 0.6, 0.3, 1) forwards; }
+.icc-pulse .halo { display: none; }
+.icc-pulse .inner { left: calc(-60px * var(--fx-k, 1)); top: calc(-60px * var(--fx-k, 1)); width: calc(120px * var(--fx-k, 1)); height: calc(120px * var(--fx-k, 1)); border: 3px solid var(--c); animation: iccBig 2s ease-out 0.35s forwards; }
+.icc-pulse .focus { left: -22px; top: -22px; width: 44px; height: 44px; border: 3px solid #fff; background: radial-gradient(circle, var(--c) 0%, color-mix(in srgb, var(--c) 40%, transparent) 55%, transparent 70%); box-shadow: 0 0 26px var(--c); animation: iccFocus 3s ease-out forwards; }
+@keyframes iccBig { 0% { transform: scale(0.1); opacity: 0.95; } 70% { opacity: 0.6; } 100% { transform: scale(3.2); opacity: 0; } }
+@keyframes iccFocus { 0% { transform: scale(0.3); opacity: 0; } 12% { transform: scale(1.3); opacity: 1; } 30% { transform: scale(1); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
+.icc-dot { --c: var(--icc-red); width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #fff; box-shadow: 0 0 14px 6px var(--c); pointer-events: none; }
+.icc-sev-critical { --c: var(--icc-red); } .icc-sev-high { --c: var(--icc-orange); } .icc-sev-medium { --c: var(--icc-yellow); } .icc-sev-low { --c: var(--icc-green); } .icc-sev-unknown { --c: var(--icc-muted); }
+.icc-callout { --c: var(--icc-red); display: flex; align-items: center; gap: 0.6em; max-width: 24em; padding: 0.35em 0.8em 0.35em 0.6em; background: color-mix(in srgb, var(--icc-red) 18%, var(--icc-bg)); border: 1px solid var(--c); border-radius: var(--radius, 6px); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 28%, transparent); color: #fff; pointer-events: none; animation: iccCalloutIn 0.35s ease-out; transition: opacity 0.3s; }
+.icc-callout i { flex: none; display: grid; place-items: center; width: 1.7em; height: 1.7em; border-radius: 4px; background: var(--c); color: #1a0508; font-style: normal; font: 700 var(--t-s)/1 var(--icc-body); }
+.icc-callout b { display: block; font: 700 var(--t-m)/1.2 var(--icc-body); letter-spacing: 0.03em; }
+.icc-callout span { display: block; color: #fbd5d5; font: 500 var(--t-s)/1.25 var(--icc-body); letter-spacing: 0.04em; }
+.icc-callout.out { opacity: 0; }
+@keyframes iccCalloutIn { from { transform: translateX(-16px) scale(0.9); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- Map focus panel (3D maps) and the user chip in the header ---------- */
+.icc-focus { position: absolute; z-index: 9; top: 118px; right: 10px; width: min(21em, calc(100% - 20px)); background: rgba(23, 28, 31, 0.96); border: 1px solid var(--icc-line-strong); color: var(--icc-text); }
+.icc-focus-head { display: flex; justify-content: space-between; width: 100%; padding: 0.4em 0.7em; border: 0; border-bottom: 1px solid var(--icc-line); background: linear-gradient(90deg, rgba(79, 124, 138, 0.22), transparent); color: #fff; font: 700 var(--t-s)/1.2 var(--icc-body); letter-spacing: 0.1em; cursor: pointer; }
+.icc-focus-note { margin: 0; padding: 0.4em 0.7em 0; font-size: var(--t-s); line-height: 1.3; color: var(--icc-muted); }
+.icc-focus-list { display: grid; gap: 0.3em; padding: 0.5em; }
+.icc-focus-list button { display: block; padding: 0.35em 0.6em; border: 1px solid var(--icc-line); background: var(--icc-panel-2); color: #fff; text-align: left; cursor: pointer; }
+.icc-focus-list button b { display: block; font: 700 var(--t-s)/1.2 var(--icc-body); }
+.icc-focus-list button span { display: block; font: 400 var(--t-s)/1.3 var(--icc-body); color: var(--icc-muted); }
+.icc-focus-list button:hover { border-color: var(--icc-line-strong); }
+.icc-focus-list button.active { background: #355760; border-color: var(--icc-cyan); }
+.icc-focus-list button.active span { color: #e0f2fe; }
+.icc-user { display: flex; align-items: center; justify-content: space-between; gap: 0.5em; margin-top: 0.3em; padding-top: 0.3em; border-top: 1px solid var(--icc-line); font-size: var(--t-s); }
+.icc-user span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #cfe0f5; }
+.icc-user button { display: inline-flex; align-items: center; gap: 0.35em; padding: 0.2em 0.6em; border: 1px solid var(--icc-line-strong); background: transparent; color: #fff; font: 600 var(--t-s)/1.2 var(--icc-body); cursor: pointer; }
+.icc-user button:hover { background: rgba(220, 38, 38, 0.35); }
+@media (prefers-reduced-motion: reduce) { .icc-pulse i, .icc-flash { animation: none; opacity: 0; } .icc-callout, .icc-hits-count { animation: none; } }
+
+/* ---------- The Live Map's Controls panel on the 3D map and the 3D globe ---------- */
+.india-command-center .icc-map-stage .icc-ctl { position: absolute; inset: 0; z-index: 9; background: transparent; pointer-events: none; }
+.india-command-center .icc-map-stage .icc-ctl .gis-controls-overlay { pointer-events: auto; top: 10px; right: 10px; width: min(23em, calc(100% - 20px)); max-height: calc(100% - 20px); }
+.india-command-center .icc-map-stage .icc-ctl .gis-controls-overlay.collapsed { width: 8em !important; }
+.india-command-center .icc-map-stage .icc-ctl .gis-panel-body { overflow-y: auto; min-height: 0; }
+.india-command-center .icc-map-stage .icc-ctl .gis-addpoint-banner { pointer-events: none; }
+.india-command-center .icc-map-stage .gis-focus-presets-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35em; }
+.india-command-center .icc-map-stage .gis-focus-preset { min-height: 0; padding: 0.45em 0.6em; font-size: 14px; }
+.india-command-center .icc-map-stage .gis-focus-preset-label { font-size: 15px; }
+.india-command-center .icc-map-stage .gis-focus-preset-intent { display: block; overflow: visible; font-size: 12.5px; line-height: 1.3; }
+.india-command-center .icc-map-stage .gis-focus-help { font-size: 12.5px; line-height: 1.35; }
+.india-command-center .icc-map-stage .gis-focus-select-label { color: var(--text-secondary); font-size: 13px; font-weight: 600; }
+.india-command-center .icc-map-stage .gis-focus-select { width: 100%; min-height: 2.4em; padding: 0.3em 0.55em; border: 1px solid var(--border); border-radius: var(--radius, 6px); background: var(--surface); color: var(--text-primary); font: 500 var(--t-s)/1.3 var(--font-ui); }
+.india-command-center .icc-map-stage .gis-focus-select:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
+.india-command-center .icc-map-stage .gis-section-subtitle { font-size: 14px; }
+.india-command-center .icc-map-stage .gis-panel-title { font-size: 17px; }
+.india-command-center .icc-map-stage .gis-controls-overlay .gis-btn-compact,
+.india-command-center .icc-map-stage .gis-controls-overlay .gis-btn-filter,
+.india-command-center .icc-map-stage .gis-controls-overlay .gis-style-pill,
+.india-command-center .icc-map-stage .gis-controls-overlay .gis-btn-more,
+.india-command-center .icc-map-stage .gis-controls-overlay .gis-btn-reset-full { font-size: 13px; }
+/* With the Live Map's own left panel gone, the map starts at the left edge instead of leaving the panel's width empty. */
+.india-command-center .icc-map-stage .gis-app-wrapper .gis-map-container { left: 0 !important; }
+
+/* Map credits: a dark translucent strip instead of a large white box, so the map is not covered. */
+.icc-gl .maplibregl-ctrl-attrib { background: rgba(23, 28, 31, 0.82) !important; color: #a3b7d2 !important; max-width: 72%; border-radius: 6px 0 0 0; }
+.icc-gl .maplibregl-ctrl-attrib a { color: var(--icc-cyan) !important; }
+
+/* People asking for help (authority): a red strip above the map with who, where, and the two answers. */
+.icc-help { margin: 8px 0; padding: 10px 14px; border: 2px solid #ef4444; border-left-width: 6px; background: rgba(127, 29, 29, 0.35); }
+.icc-help h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font: 800 var(--t-m)/1.2 var(--icc-display); letter-spacing: 0.05em; color: #fecaca; }
+.icc-help ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 12em; overflow-y: auto; }
+.icc-help li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: var(--t-s); }
+.icc-help em { font-style: normal; color: #86efac; font-weight: 700; }
+.icc-help-actions { display: inline-flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.icc-help button { min-height: 40px; padding: 4px 14px; border: 1px solid #fca5a5; background: rgba(29, 36, 39, 0.7); color: #fff; font: 700 var(--t-s)/1.2 var(--icc-body); cursor: pointer; }
+.icc-help button:hover:not(:disabled) { background: #ef4444; }
+.icc-help button:disabled { opacity: 0.45; cursor: not-allowed; }
+.icc-help button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.icc-help-error { margin: 6px 0 0; color: #fecaca; font-size: var(--t-s); }

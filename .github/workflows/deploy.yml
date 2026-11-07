@@ -1,0 +1,141 @@
+name: SENETRY CI-CD
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sentry-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build Frontend
+        run: npm run build
+        working-directory: frontend
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
+          VITE_TOMTOM_API_KEYS: ${{ secrets.VITE_TOMTOM_API_KEYS }}
+          VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
+          VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
+          VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
+
+      - name: Install Backend Dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Run Backend Tests
+        run: npm test
+        working-directory: backend
+
+  deploy:
+    name: Deploy Frontend and Backend
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Synchronize Netlify Environment Variables
+        working-directory: frontend
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
+          VITE_TOMTOM_API_KEYS: ${{ secrets.VITE_TOMTOM_API_KEYS }}
+          VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
+          VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
+          VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
+
+        run: |
+          set -e
+
+          for key in \
+            VITE_API_URL \
+            VITE_GOOGLE_CLIENT_ID \
+            VITE_MICROSOFT_CLIENT_ID \
+            VITE_TOMTOM_API_KEYS \
+            VITE_TOMTOM_TRAFFIC_ENABLED \
+            VITE_DEMO_MODE \
+            VITE_CESIUM_ION_TOKEN
+          do
+            value="${!key}"
+
+            if [ -n "$value" ]; then
+              npx --yes netlify-cli@latest env:set \
+                "$key" "$value" \
+                --site "$NETLIFY_SITE_ID" \
+                --context production \
+                --scope builds \
+                --force
+            else
+              echo "Skipping unset variable: $key"
+            fi
+          done
+
+      - name: Build Frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
+          VITE_TOMTOM_API_KEYS: ${{ secrets.VITE_TOMTOM_API_KEYS }}
+          VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
+          VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
+          VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy Frontend to Netlify
+        working-directory: frontend
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          npx --yes netlify-cli@latest deploy \
+            --prod \
+            --dir dist \
+            --no-build \
+            --site "$NETLIFY_SITE_ID"
+
+      - name: Trigger Render Backend Deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          curl --fail --show-error --silent \
+            --request POST \
+            "$RENDER_DEPLOY_HOOK_URL"
