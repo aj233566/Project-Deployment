@@ -14,6 +14,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ==========================================
+  # CI: BUILD AND TEST
+  # ==========================================
   test:
     name: Build and Test
     runs-on: ubuntu-latest
@@ -27,10 +30,12 @@ jobs:
         with:
           node-version: 22
 
+      # FRONTEND DEPENDENCIES
       - name: Install Frontend Dependencies
         working-directory: frontend
         run: npm ci
 
+      # FRONTEND BUILD AND VALIDATION
       - name: Build and Validate Frontend
         working-directory: frontend
         env:
@@ -41,15 +46,18 @@ jobs:
           VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
           VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
           VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
+
         run: |
+          set -e
+
           if [ -z "$VITE_API_URL" ]; then
-            echo "::error::VITE_API_URL secret is missing."
+            echo "::error::VITE_API_URL GitHub Secret is missing."
             exit 1
           fi
 
           case "$VITE_API_URL" in
             http://localhost*|https://localhost*)
-              echo "::error::Production API URL cannot be localhost."
+              echo "::error::Production API URL cannot point to localhost."
               exit 1
               ;;
           esac
@@ -61,14 +69,30 @@ jobs:
             exit 1
           fi
 
+          echo "Frontend build and API URL validation successful."
+
+      # BACKEND DEPENDENCIES
       - name: Install Backend Dependencies
         working-directory: backend
         run: npm ci
 
+      # BACKEND TESTS
       - name: Run Backend Tests
         working-directory: backend
         run: npm test
 
+      # SAVE THE VALIDATED FRONTEND BUILD
+      - name: Upload Frontend Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentry-frontend-dist
+          path: frontend/dist/
+          if-no-files-found: error
+          retention-days: 1
+
+  # ==========================================
+  # CD: DEPLOY TO NETLIFY AND RENDER
+  # ==========================================
   deploy:
     name: Deploy Frontend and Backend
     needs: test
@@ -83,12 +107,20 @@ jobs:
         with:
           node-version: 22
 
-      
+      # RESTORE THE EXACT BUILD THAT PASSED CI
+      - name: Download Frontend Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sentry-frontend-dist
+          path: frontend/dist/
+
+      # SYNCHRONIZE GITHUB SECRETS WITH NETLIFY
       - name: Synchronize Netlify Environment Variables
         working-directory: frontend
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
@@ -96,8 +128,19 @@ jobs:
           VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
           VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
           VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
+
         run: |
           set -e
+
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error::NETLIFY_AUTH_TOKEN secret is missing."
+            exit 1
+          fi
+
+          if [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "::error::NETLIFY_SITE_ID secret is missing."
+            exit 1
+          fi
 
           for key in \
             VITE_API_URL \
@@ -115,103 +158,51 @@ jobs:
                 "$key" "$value" \
                 --site "$NETLIFY_SITE_ID" \
                 --force
+
               echo "Updated $key on Netlify."
             else
               echo "Skipping unset variable: $key"
             fi
           done
 
-        working-directory: frontend
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-          VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
-          VITE_TOMTOM_API_KEYS: ${{ secrets.VITE_TOMTOM_API_KEYS }}
-          VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
-          VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
-          VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
-        run: |
-          set -e
-
-          for key in \
-            VITE_API_URL \
-            VITE_GOOGLE_CLIENT_ID \
-            VITE_MICROSOFT_CLIENT_ID \
-            VITE_TOMTOM_API_KEYS \
-            VITE_TOMTOM_TRAFFIC_ENABLED \
-            VITE_DEMO_MODE \
-            VITE_CESIUM_ION_TOKEN
-          do
-            value="${!key}"
-
-            if [ -n "$value" ]; then
-              npx --yes netlify-cli@latest env:set \
-                "$key" "$value" \
-                --site "$NETLIFY_SITE_ID" \
-                --context production \
-                --scope builds \
-                --force
-            else
-              echo "Skipping unset variable: $key"
-            fi
-          done
-
-      - name: Build Frontend
-        working-directory: frontend
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-          VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
-          VITE_TOMTOM_API_KEYS: ${{ secrets.VITE_TOMTOM_API_KEYS }}
-          VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
-          VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
-          VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
-        run: |
-          set -e
-
-          if [ -z "$VITE_API_URL" ]; then
-            echo "::error::VITE_API_URL secret is missing."
-            exit 1
-          fi
-
-          case "$VITE_API_URL" in
-            http://localhost*|https://localhost*)
-              echo "::error::Production API URL cannot be localhost."
-              exit 1
-              ;;
-          esac
-
-          npm ci
-          npm run build
-
-          if grep -R -q "localhost:5000" dist/assets; then
-            echo "::error::Production build contains localhost:5000."
-            exit 1
-          fi
-
+      # DEPLOY FRONTEND
       - name: Deploy Frontend to Netlify
         working-directory: frontend
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
         run: |
+          set -e
+
+          if [ ! -f "dist/index.html" ]; then
+            echo "::error::Frontend build artifact is missing index.html."
+            exit 1
+          fi
+
           npx --yes netlify-cli@latest deploy \
             --prod \
             --dir dist \
             --no-build \
             --site "$NETLIFY_SITE_ID"
 
+          echo "Frontend deployment submitted to Netlify."
+
+      # TRIGGER BACKEND DEPLOYMENT
       - name: Trigger Render Backend Deployment
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+
         run: |
+          set -e
+
           if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
-            echo "::error::Render deploy hook secret is missing."
+            echo "::error::RENDER_DEPLOY_HOOK_URL secret is missing."
             exit 1
           fi
 
           curl --fail --show-error --silent \
             --request POST \
             "$RENDER_DEPLOY_HOOK_URL"
+
+          echo "Render backend deployment triggered."
