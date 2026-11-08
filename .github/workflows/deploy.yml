@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
   workflow_dispatch:
 
 permissions:
@@ -29,11 +28,10 @@ jobs:
           node-version: 22
 
       - name: Install Frontend Dependencies
-        run: npm ci
         working-directory: frontend
+        run: npm ci
 
-      - name: Build Frontend
-        run: npm run build
+      - name: Build and Validate Frontend
         working-directory: frontend
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
@@ -43,14 +41,33 @@ jobs:
           VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
           VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
           VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
+        run: |
+          if [ -z "$VITE_API_URL" ]; then
+            echo "::error::VITE_API_URL secret is missing."
+            exit 1
+          fi
+
+          case "$VITE_API_URL" in
+            http://localhost*|https://localhost*)
+              echo "::error::Production API URL cannot be localhost."
+              exit 1
+              ;;
+          esac
+
+          npm run build
+
+          if grep -R -q "localhost:5000" dist/assets; then
+            echo "::error::Production build contains localhost:5000."
+            exit 1
+          fi
 
       - name: Install Backend Dependencies
-        run: npm ci
         working-directory: backend
+        run: npm ci
 
       - name: Run Backend Tests
-        run: npm test
         working-directory: backend
+        run: npm test
 
   deploy:
     name: Deploy Frontend and Backend
@@ -71,7 +88,6 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
           VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
@@ -79,7 +95,6 @@ jobs:
           VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
           VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
           VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
-
         run: |
           set -e
 
@@ -106,7 +121,7 @@ jobs:
             fi
           done
 
-            - name: Build Frontend
+      - name: Build Frontend
         working-directory: frontend
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
@@ -117,37 +132,27 @@ jobs:
           VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
           VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
         run: |
+          set -e
+
           if [ -z "$VITE_API_URL" ]; then
-            echo "::error::VITE_API_URL GitHub Secret is missing."
+            echo "::error::VITE_API_URL secret is missing."
             exit 1
           fi
 
           case "$VITE_API_URL" in
             http://localhost*|https://localhost*)
-              echo "::error::Production API URL cannot point to localhost."
+              echo "::error::Production API URL cannot be localhost."
               exit 1
               ;;
           esac
 
+          npm ci
           npm run build
 
           if grep -R -q "localhost:5000" dist/assets; then
             echo "::error::Production build contains localhost:5000."
             exit 1
           fi
-          
-        working-directory: frontend
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-          VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
-          VITE_TOMTOM_API_KEYS: ${{ secrets.VITE_TOMTOM_API_KEYS }}
-          VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
-          VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
-          VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
-        run: |
-          npm ci
-          npm run build
 
       - name: Deploy Frontend to Netlify
         working-directory: frontend
@@ -165,6 +170,11 @@ jobs:
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::Render deploy hook secret is missing."
+            exit 1
+          fi
+
           curl --fail --show-error --silent \
             --request POST \
             "$RENDER_DEPLOY_HOOK_URL"
