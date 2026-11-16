@@ -18,7 +18,8 @@ export function getResourcesPath(user = getStoredUser()) {
 export function getAuthorityNavigationGroups(user = getStoredUser()) {
   if (user?.role !== "authority") return [];
   return [
-    { label: "Command Center", to: getDashboardPath(user) },
+    { label: "Dashboard", to: getDashboardPath(user) },
+    { label: "Weather", to: "/weather" },
     {
       label: "Incident",
       links: [
@@ -26,7 +27,6 @@ export function getAuthorityNavigationGroups(user = getStoredUser()) {
         { label: "Report Incident", to: "/report-incident" },
       ],
     },
-    { label: "Weather", to: "/weather" },
     {
       label: "Notification",
       links: [
@@ -35,7 +35,7 @@ export function getAuthorityNavigationGroups(user = getStoredUser()) {
       ],
     },
     {
-      label: "Emergency Resource",
+      label: "Emergency Resources",
       links: [
         { label: "Emergency Resources", to: "/emergency-resources" },
         { label: "Resources", to: "/resources" },

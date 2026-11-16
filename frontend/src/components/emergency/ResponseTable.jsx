@@ -1,10 +1,13 @@
 import {
   Send,
+  CheckCircle2,
 } from "lucide-react";
 import RiskBadge from "../alerts/RiskBadge";
 export const ResponseTable = ({
   areas = [],
   onDispatch,
+  onComplete,
+  completingAreaId,
 }) => {
   return (
     <div className="ops-panel">
@@ -72,6 +75,9 @@ export const ResponseTable = ({
             <tbody>
 
               {areas.map((area) => {
+                const assignedTeams = area.availableResources?.assignedTeams
+                  || area.assignedTeams
+                  || (onComplete && area.assignedTeam ? [area.assignedTeam] : []);
                 const rawRiskScore = area.riskScore ?? area.risk?.score;
                 const riskScore = rawRiskScore !== null && rawRiskScore !== undefined && rawRiskScore !== ""
                   && Number.isFinite(Number(rawRiskScore))
@@ -282,10 +288,7 @@ export const ResponseTable = ({
 
                     <td>
 
-                      {area
-                        .availableResources
-                        ?.assignedTeams
-                        ?.length > 0 ? (
+                      {assignedTeams.length > 0 ? (
                         <div
                           style={{
                             display:
@@ -296,7 +299,7 @@ export const ResponseTable = ({
                           }}
                         >
 
-                          {area.availableResources.assignedTeams.map(
+                          {assignedTeams.map(
                             (
                               team,
                               index
@@ -335,20 +338,24 @@ export const ResponseTable = ({
 
                     <td>
 
-                      <button
-                        className="btn-ops btn-ops-sm btn-ops-primary"
-                        onClick={() =>
-                          onDispatch(
-                            area
-                          )
-                        }
-                      >
-                        <Send size={11} />
-
-                        <span>
-                          Dispatch
-                        </span>
-                      </button>
+                      {area.dispatchId && onComplete ? (
+                        <button
+                          className="btn-ops btn-ops-sm btn-ops-primary"
+                          onClick={() => onComplete(area)}
+                          disabled={completingAreaId === (area.id || area._id)}
+                        >
+                          <CheckCircle2 size={11} />
+                          <span>{completingAreaId === (area.id || area._id) ? "Saving…" : "Mark task done"}</span>
+                        </button>
+                      ) : (
+                        <button
+                          className="btn-ops btn-ops-sm btn-ops-primary"
+                          onClick={() => onDispatch(area)}
+                        >
+                          <Send size={11} />
+                          <span>Dispatch</span>
+                        </button>
+                      )}
 
                     </td>
 

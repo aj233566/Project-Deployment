@@ -1,4 +1,5 @@
 const Resource = require("../models/resource");
+const EmergencyDispatch = require("../models/emergency_dispatch");
 const { calculateResourceStatus } = require("../services/resource_status");
 const formatResource = (resource) => {
     const quantity = (value) => {
@@ -151,8 +152,19 @@ const createResource = async (
                     "Resource category is required."
             });
         }
+        let recordedAvailable = available;
+        if (req.user?.role === "authority") {
+            const calculatedAvailable = Number(total) - Number(deployed || 0) - Number(reserved || 0);
+            if (!Number.isFinite(calculatedAvailable) || calculatedAvailable < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Total units must cover deployed and reserved units."
+                });
+            }
+            recordedAvailable = calculatedAvailable;
+        }
         const invalidRequiredQuantity = ["total", "available"].find((key) => {
-            const value = req.body[key];
+            const value = key === "available" ? recordedAvailable : req.body[key];
             return value === null
                 || value === undefined
                 || value === ""
@@ -179,7 +191,7 @@ const createResource = async (
             });
         }
         if (
-            Number(available) > Number(total)
+            Number(recordedAvailable) > Number(total)
         ) {
             return res.status(400).json({
                 success: false,
@@ -196,7 +208,7 @@ const createResource = async (
                     category.trim(),
                 description,
                 total,
-                available,
+                available: recordedAvailable,
                 deployed,
                 reserved,
                 location,
@@ -204,7 +216,7 @@ const createResource = async (
                 status:
                     calculateResourceStatus(
                         total,
-                        available,
+                        recordedAvailable,
                         deployed
                     )
             });
@@ -222,6 +234,12 @@ const createResource = async (
             "Resource creation error:",
             error
         );
+        if (req.user?.role === "authority" && error?.code === 11000) {
+            return res.status(409).json({
+                success: false,
+                message: "That resource ID is already registered."
+            });
+        }
         res.status(500).json({
             success: false,
             message:
@@ -268,16 +286,39 @@ const updateResource = async (
                     "Resource not found."
             });
         }
-        const total =
-            updates.total ??
-            current.total;
-        const available =
-            updates.available ??
-            current.available;
-        const deployed =
-            updates.deployed ??
-            current.deployed;
-        const quantities = { total, available, deployed, reserved: updates.reserved ?? current.reserved };
+        if (req.user?.role === "authority" && updates.name && updates.name.trim().toLowerCase() !== current.name.toLowerCase()) {
+            const escapedCurrentName = String(current.name || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const activeAssignment = await EmergencyDispatch.findOne({
+                status: { $in: ["dispatched", "en_route", "arrived"] },
+                $or: [
+                    { resourceRef: current._id },
+                    { unitName: { $regex: `^${escapedCurrentName}$`, $options: "i" } }
+                ]
+            }).lean();
+            if (activeAssignment) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Complete the active resource task before changing this resource name."
+                });
+            }
+        }
+        const total = updates.total ?? current.total;
+        const deployed = updates.deployed ?? current.deployed ?? 0;
+        const reserved = updates.reserved ?? current.reserved ?? 0;
+        const recalculatesAvailability = req.user?.role === "authority"
+            && ["total", "deployed", "reserved", "available"].some((key) => updates[key] !== undefined);
+        if (recalculatesAvailability) {
+            const calculatedAvailable = Number(total) - Number(deployed || 0) - Number(reserved || 0);
+            if (calculatedAvailable < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Total units must cover deployed and reserved units."
+                });
+            }
+            updates.available = calculatedAvailable;
+        }
+        const available = updates.available ?? current.available;
+        const quantities = { total, available, deployed, reserved };
         const invalidRequiredQuantity = ["total", "available"].find((key) =>
             quantities[key] === null
             || quantities[key] === undefined
@@ -350,9 +391,37 @@ const updateResource = async (
         });
     }
 };
+const deleteResource = async (req, res) => {
+    try {
+        const resource = await Resource.findById(req.params.id);
+        if (!resource) {
+            return res.status(404).json({ success: false, message: "Resource not found." });
+        }
+        const escapedName = String(resource.name || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const activeAssignment = await EmergencyDispatch.findOne({
+            status: { $in: ["dispatched", "en_route", "arrived"] },
+            $or: [
+                { resourceRef: resource._id },
+                { unitName: { $regex: `^${escapedName}$`, $options: "i" } }
+            ]
+        }).lean();
+        if (activeAssignment) {
+            return res.status(409).json({
+                success: false,
+                message: "This resource has an active assignment. Mark the task done before deleting it."
+            });
+        }
+        await Resource.deleteOne({ _id: resource._id });
+        return res.status(200).json({ success: true, message: "Resource deleted successfully." });
+    } catch (error) {
+        console.error("Resource deletion error:", error);
+        return res.status(500).json({ success: false, message: "Failed to delete resource." });
+    }
+};
 module.exports = {
     getResources,
     getResourceById,
     createResource,
-    updateResource
+    updateResource,
+    deleteResource
 };

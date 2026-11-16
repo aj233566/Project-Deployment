@@ -8,6 +8,9 @@ async function request(path, config) {
 }
 export const sentryApi = {
   getHabitations: (params = {}) => request("/habitations", { params }),
+  getNearbyHabitations: (latitude, longitude, radiusKm = 10) => request("/habitations/nearby", {
+    params: { latitude, longitude, radiusKm },
+  }),
   getHabitation: (id) => request(`/habitations/${id}`),
   createHabitation: (data) => request("/habitations", {
     method: "POST",

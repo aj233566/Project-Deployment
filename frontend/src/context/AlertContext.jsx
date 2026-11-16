@@ -42,19 +42,20 @@ export const AlertProvider = ({ children }) => {
     }
     return [];
   }, []);
-  const loadAlerts = useCallback(async () => {
-    setAlertsLoading(true);
+  const loadAlerts = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setAlertsLoading(true);
     setAlertsError("");
     try {
       const response = await alertApi.getAlerts();
       const data = extractData(response);
       setAlerts(data);
+      return data;
     } catch (error) {
       console.error("[AlertContext] Failed to load alerts:", error);
-      setAlerts([]);
       setAlertsError(error.message || "Unable to load alerts.");
+      return null;
     } finally {
-      setAlertsLoading(false);
+      if (!silent) setAlertsLoading(false);
     }
   }, [extractData]);
   const loadNotifications = useCallback(async () => {
@@ -135,6 +136,24 @@ export const AlertProvider = ({ children }) => {
       throw error;
     }
   };
+  const updateAlertTelemetry = async (id, telemetry) => {
+    if (!id) throw new Error("Alert ID is required.");
+    const response = await alertApi.updateAlertTelemetry(id, telemetry);
+    const updated = response?.data;
+    if (updated) {
+      setAlerts((previousAlerts) => previousAlerts.map((alert) =>
+        alert._id === id || alert.id === id
+          ? { ...alert, operatorTelemetry: updated.operatorTelemetry }
+          : alert
+      ));
+    }
+    return updated;
+  };
+  const deleteAlert = async (id) => {
+    if (!id) throw new Error("Alert ID is required.");
+    await alertApi.deleteAlert(id);
+    setAlerts((previousAlerts) => previousAlerts.filter((alert) => alert._id !== id && alert.id !== id));
+  };
   const acknowledgeAlert = async (id) => {
     await updateAlertStatus(id, "Acknowledged");
   };
@@ -172,6 +191,18 @@ export const AlertProvider = ({ children }) => {
       return response;
     } catch (error) {
       console.error("[AlertContext] Dispatch failed:", error);
+      throw error;
+    }
+  };
+  const completeEmergencyDispatch = async (areaId) => {
+    if (!areaId) throw new Error("Emergency area ID is required.");
+    try {
+      const response = await emergencyApi.completeDispatch(areaId);
+      await loadEmergencyAreas();
+      await loadResources();
+      return response;
+    } catch (error) {
+      console.error("[AlertContext] Dispatch completion failed:", error);
       throw error;
     }
   };
@@ -250,6 +281,8 @@ export const AlertProvider = ({ children }) => {
     alertsLoading,
     alertsError,
     loadAlerts,
+    updateAlertTelemetry,
+    deleteAlert,
     acknowledgeAlert,
     resolveAlert,
     escalateAlert,
@@ -265,6 +298,7 @@ export const AlertProvider = ({ children }) => {
     emergencyAreasError,
     loadEmergencyAreas,
     dispatchEmergencyUnit,
+    completeEmergencyDispatch,
     resources,
     resourcesLoading,
     resourcesError,

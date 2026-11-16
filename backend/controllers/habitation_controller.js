@@ -64,6 +64,37 @@ const getHabitations = async (req, res, next) => {
         next(error);
     }
 };
+const getNearbyHabitations = async (req, res, next) => {
+    try {
+        const latitude = Number(req.query.latitude);
+        const longitude = Number(req.query.longitude);
+        const radiusKm = req.query.radiusKm === undefined ? 10 : Number(req.query.radiusKm);
+        if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
+            || !Number.isFinite(longitude) || longitude < -180 || longitude > 180
+            || !Number.isFinite(radiusKm) || radiusKm <= 0 || radiusKm > 100) {
+            return res.status(400).json({ success: false, message: "Valid coordinates and a radius greater than 0 and no more than 100 km are required." });
+        }
+        const data = await Habitation.find({
+            active: true,
+            location: {
+                $near: {
+                    $geometry: { type: "Point", coordinates: [longitude, latitude] },
+                    $maxDistance: radiusKm * 1000
+                }
+            }
+        }).select("name district state population location").limit(500).lean();
+        return res.json({
+            success: true,
+            count: data.length,
+            radiusKm,
+            populationEstimate: data.reduce((total, item) => total + (Number(item.population) || 0), 0),
+            populationEstimateComplete: data.length < 500,
+            data
+        });
+    } catch (error) {
+        return next(error);
+    }
+};
 const getHabitationById = async (req, res, next) => {
     try {
         if (!mongoose.isValidObjectId(req.params.id)) {
@@ -159,6 +190,7 @@ const recalculateRedZone = async (req, res, next) => {
 module.exports = {
     createHabitation,
     getHabitations,
+    getNearbyHabitations,
     getHabitationById,
     updateHabitation,
     getRedZones,

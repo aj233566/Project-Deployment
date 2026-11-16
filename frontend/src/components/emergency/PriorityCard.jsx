@@ -1,6 +1,6 @@
-import { Route, Building, Home, Truck, Send } from "lucide-react";
+import { Route, Building, Home, Truck, Send, CheckCircle2 } from "lucide-react";
 import RiskBadge from "../alerts/RiskBadge";
-export const PriorityCard = ({ area, onDispatch }) => {
+export const PriorityCard = ({ area, onDispatch, onComplete, completing = false }) => {
   if (!area) {
     return null;
   }
@@ -39,10 +39,11 @@ export const PriorityCard = ({ area, onDispatch }) => {
   const linkedHabitation = area.linkedHabitation;
   const relocationDecision = area.relocationDecision;
   const recommendedSite = relocationDecision?.candidates?.find((candidate) => candidate.usable);
-  const assignedTeams =
-    area.availableResources?.assignedTeams || area.assignedTeams || [];
+  const assignedTeams = area.availableResources?.assignedTeams
+    || area.assignedTeams
+    || (onComplete && area.assignedTeam ? [area.assignedTeam] : []);
   const assignmentDataAvailable =
-    area.availableResources != null || Array.isArray(area.assignedTeams);
+    area.availableResources != null || Array.isArray(area.assignedTeams) || Boolean(onComplete && area.assignedTeam);
   const responseStatus = area.responseStatus || "Not recorded";
   const getResponseStatusColor = () => {
     const status = String(responseStatus).toLowerCase();
@@ -345,15 +346,21 @@ export const PriorityCard = ({ area, onDispatch }) => {
           <span>Status: {responseStatus || "Not recorded"}</span>
         </div>
 
-        <button
-          className="btn-ops btn-ops-sm btn-ops-primary"
-          onClick={() => onDispatch?.(area)}
-          disabled={!onDispatch}
-        >
-          <Send size={12} />
-
-          <span>Dispatch Team</span>
-        </button>
+        {area.dispatchId && onComplete ? (
+          <button className="btn-ops btn-ops-sm btn-ops-primary" onClick={() => onComplete(area)} disabled={completing}>
+            <CheckCircle2 size={12} />
+            <span>{completing ? "Saving…" : "Mark task done"}</span>
+          </button>
+        ) : (
+          <button
+            className="btn-ops btn-ops-sm btn-ops-primary"
+            onClick={() => onDispatch?.(area)}
+            disabled={!onDispatch}
+          >
+            <Send size={12} />
+            <span>Dispatch Team</span>
+          </button>
+        )}
       </div>
     </div>
   );

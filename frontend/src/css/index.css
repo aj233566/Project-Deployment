@@ -1,26 +1,57 @@
 :root {
-  --bg-primary: #101416;
-  --bg-secondary: #171c1f;
-  --surface: #1d2427;
-  --surface-elevated: #242d31;
-  --border: #303b40;
-  --critical: #d64545;
-  --high-risk: #d97732;
-  --warning: #c9a227;
-  --safe: #3d8b63;
-  --info: #4f7c8a;
-  --text-primary: #f2f4f5;
-  --text-secondary: #b6c0c4;
-  --text-muted: #7f8a8f;
-  --text-disabled: #566166;
-  --map-land: #20282b;
-  --map-water: #1b3942;
-  --map-roads: #59656a;
-  --map-buildings: #293236;
-  --map-borders: #3a4549;
+  color-scheme: light;
+  --stone: #FFFFFF;
+  --paper: #F5F5F5;
+  --ink: #111111;
+  --slate: #555555;
+  --line: #DDDDDD;
+  --risk-low: #2E7D32;
+  --risk-moderate: #D6A000;
+  --risk-high: #E87500;
+  --risk-critical: #C62828;
+  --risk-low-ink: #1B5E20;
+  --risk-moderate-ink: #735600;
+  --risk-high-ink: #A84300;
+  --risk-critical-ink: #A71919;
+  --bg-primary: var(--stone);
+  --bg-secondary: var(--paper);
+  --surface: var(--paper);
+  --surface-elevated: var(--stone);
+  --border: var(--line);
+  --critical: var(--risk-critical);
+  --high-risk: var(--risk-high);
+  --warning: var(--risk-moderate);
+  --safe: var(--risk-low);
+  --info: var(--slate);
+  --text-primary: var(--ink);
+  --text-secondary: var(--slate);
+  --text-muted: var(--slate);
+  --text-disabled: #888888;
+  --map-land: #E5E5E5;
+  --map-water: #DCE9EC;
+  --map-roads: #A6A6A6;
+  --map-buildings: #D2D2D2;
+  --map-borders: #B8B8B8;
   --font-ui: "Times New Roman", Times, serif;
   --font-mono: "Times New Roman", Times, serif;
   --bs-body-font-family: "Times New Roman", Times, serif;
+}
+:root.dark {
+  color-scheme: dark;
+  --stone: #1A1A1A;
+  --paper: #242424;
+  --ink: #F2F2F2;
+  --slate: #A8A8A8;
+  --line: #3A3A3A;
+  --risk-low-ink: #81C784;
+  --risk-moderate-ink: #FFE082;
+  --risk-high-ink: #FFB74D;
+  --risk-critical-ink: #FF8A80;
+  --map-land: var(--surface-elevated);
+  --map-water: #1B3942;
+  --map-roads: #59656A;
+  --map-buildings: #293236;
+  --map-borders: #3A4549;
 }
 * {
   box-sizing: border-box;
@@ -170,42 +201,7 @@ img {
   background-color: var(--surface-elevated) !important;
   color: var(--text-primary) !important;
 }
-:root {
-  --bg-primary: #101416;
-  --bg-secondary: #171c1f;
-  --card: #1d2427;
-  --elevated: #242d31;
-  --border: #303b40;
-  --border-light: #3e4c52;
-  --critical: #d64545;
-  --critical-bg: rgba(214, 69, 69, 0.12);
-  --critical-border: #8a2626;
-  --high-risk: #d97732;
-  --high-risk-bg: rgba(217, 119, 50, 0.12);
-  --high-risk-border: #874316;
-  --warning: #c9a227;
-  --warning-bg: rgba(201, 162, 39, 0.12);
-  --warning-border: #7a5f12;
-  --safe: #3d8b63;
-  --safe-bg: rgba(61, 139, 99, 0.12);
-  --safe-border: #23573d;
-  --info: #4f7c8a;
-  --info-bg: rgba(79, 124, 138, 0.12);
-  --info-border: #2e4b54;
-  --land: #20282b;
-  --water: #1b3942;
-  --roads: #59656a;
-  --buildings: #293236;
-  --admin-border: #3a4549;
-  --text-primary: #f2f4f5;
-  --text-secondary: #b6c0c4;
-  --text-muted: #7f8a8f;
-  --text-disabled: #566166;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --sidebar-width: 260px;
-}
+
 *,
 *::before,
 *::after {

@@ -81,6 +81,14 @@ const alertSchema = new mongoose.Schema(
       enum: ["LOW", "MODERATE", "HIGH", "CRITICAL"],
       required: true,
     },
+    weather: {
+      source: { type: String, default: "" },
+      updateTime: { type: String, default: "" },
+      rain: { type: Number, default: null },
+      precipitation: { type: Number, default: null },
+      next72HourPrecipitation: { type: Number, default: null },
+      fetchedAt: { type: Date, default: null },
+    },
     aiConfidence: {
       type: Number,
       default: null,
@@ -101,6 +109,16 @@ const alertSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    operatorTelemetry: {
+      rainfallMm: { type: Number, min: 0, default: null },
+      soilMoisture: { type: Number, min: 0, max: 100, default: null },
+      slopeRisk: { type: String, enum: ["UNKNOWN", "LOW", "MODERATE", "HIGH", "CRITICAL"], default: "UNKNOWN" },
+      roadStatus: { type: String, enum: ["UNKNOWN", "OPEN", "PARTIAL", "BLOCKED"], default: "UNKNOWN" },
+      populationEstimate: { type: Number, min: 0, default: null },
+      notes: { type: String, trim: true, maxlength: 1000, default: "" },
+      updatedAt: { type: Date, default: null },
+      updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    },
     status: {
       type: String,
       enum: ["Active", "Acknowledged", "Resolved", "Escalated"],

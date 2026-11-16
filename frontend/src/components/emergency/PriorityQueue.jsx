@@ -1,5 +1,5 @@
 import PriorityCard from "./PriorityCard";
-export const PriorityQueue = ({ areas = [], onDispatch }) => {
+export const PriorityQueue = ({ areas = [], onDispatch, onComplete, completingAreaId }) => {
   const p1Areas = areas.filter((area) => area.priorityQueue === "Priority 1");
   const p2Areas = areas.filter((area) => area.priorityQueue === "Priority 2");
   const p3Areas = areas.filter((area) => area.priorityQueue === "Priority 3");
@@ -19,7 +19,12 @@ export const PriorityQueue = ({ areas = [], onDispatch }) => {
             className="col-12 col-md-6 col-xl-4 d-flex"
           >
             <div className="w-100 d-flex flex-column">
-              <PriorityCard area={area} onDispatch={onDispatch} />
+              <PriorityCard
+                area={area}
+                onDispatch={onDispatch}
+                onComplete={onComplete}
+                completing={completingAreaId === (area.id || area._id)}
+              />
             </div>
           </div>
         ))}

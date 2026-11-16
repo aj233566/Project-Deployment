@@ -2,10 +2,10 @@
     display: flex;
     flex-direction: column;
     padding: 1.25rem;
-    background: var(--card-bg, #1d2427);
-    border: 1px solid var(--border, #303b40);
+    background: var(--card-bg, var(--surface));
+    border: 1px solid var(--border);
     border-radius: 0.6rem;
-    color: var(--text, #f1f4f5);
+    color: var(--text, var(--ink));
     transition:
         border-color 0.2s ease,
         background 0.2s ease,
@@ -21,7 +21,7 @@
 }
 .incident-card-title {
     margin: 0;
-    color: #f1f4f5;
+    color: var(--ink);
     font-size: 1.809rem;
     font-weight: 700;
     line-height: 1.35;
@@ -36,8 +36,8 @@
     align-self: flex-start;
     margin-bottom: 0.75rem;
     padding: 0.3rem 0.6rem;
-    background: #303b40;
-    border: 1px solid #3a454a;
+    background: var(--border);
+    border: 1px solid var(--line);
     border-radius: 0.35rem;
     color: #d9e0e4;
     font-size: 1.179rem;
@@ -79,7 +79,7 @@
 .incident-card-footer {
     margin-top: auto;
     padding-top: 0.9rem;
-    border-top: 1px solid #303b40;
+    border-top: 1px solid var(--border);
 }
 .incident-view-details {
     display: inline-flex;

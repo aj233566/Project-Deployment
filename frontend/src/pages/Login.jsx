@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { apiBaseUrl } from "../services/api";
 import { setSession } from "../context/session";
 import OAuthButtons from "../components/OAuthButtons";
-function Login({ expectedRole = null }) {
+function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
@@ -43,19 +43,6 @@ function Login({ expectedRole = null }) {
       if (!response.ok) {
         throw new Error(data.message || "Invalid email or password.");
       }
-      if (expectedRole && data.user?.role !== expectedRole) {
-        await fetch(`${apiBaseUrl}/auth/logout`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${data.token}`,
-          },
-        }).catch(() => {});
-        const roleName = expectedRole === "citizen" ? "citizen" : "authority";
-        setError(
-          `This is the ${roleName} sign-in page. Use the matching role login.`,
-        );
-        return;
-      }
       setSession(data.token, data.user);
       if (data.user.role === "admin") {
         navigate("/admin", { replace: true });
@@ -85,37 +72,18 @@ function Login({ expectedRole = null }) {
       const data = await response.json();
       if (data.profileRequired) {
         navigate("/signup", {
-          state: {
-            oauthSignup: { provider, credential, profile: data.profile },
-          },
+          state: { oauthSignup: { provider, credential, profile: data.profile } },
         });
         return;
       }
-      if (!response.ok)
-        throw new Error(data.message || "Provider sign-in failed.");
-      if (expectedRole && data.user?.role !== expectedRole) {
-        await fetch(`${apiBaseUrl}/auth/logout`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${data.token}` },
-        }).catch(() => {});
-        const roleName = expectedRole === "citizen" ? "citizen" : "authority";
-        setError(
-          `This is the ${roleName} sign-in page. Use the matching role login.`,
-        );
-        return;
-      }
+      if (!response.ok) throw new Error(data.message || "Provider sign-in failed.");
       setSession(data.token, data.user);
       if (data.user.role === "admin") navigate("/admin", { replace: true });
-      else if (
-        data.user.role === "authority" &&
-        data.user.authorityStatus === "verified"
-      ) {
+      else if (data.user.role === "authority" && data.user.authorityStatus === "verified") {
         navigate("/dashboard/authority", { replace: true });
       } else navigate("/dashboard/citizen", { replace: true });
     } catch (providerError) {
-      setError(
-        providerError.message || "Provider sign-in failed. Please try again.",
-      );
+      setError(providerError.message || "Provider sign-in failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -126,22 +94,20 @@ function Login({ expectedRole = null }) {
         <div className="row min-vh-100 align-items-center justify-content-center">
           <div className="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
             <div className="auth-brand text-center">
-              <div className="brand-mark" aria-hidden="true">
-                <img src="/senetry-logo-transparent.svg" alt="" />
-              </div>
+              <div className="brand-mark" aria-hidden="true"><img src="/senetry-logo-transparent.svg" alt="" /></div>
 
               <h1>SENETRY</h1>
+
+              <p>
+                Multi-Hazard Disaster Intelligence
+                <br />
+                &amp; Early Warning System
+              </p>
             </div>
 
             <section className="auth-card">
               <div className="auth-card-header">
-                <span className="section-label">
-                  {expectedRole === "citizen"
-                    ? "CITIZEN ACCESS"
-                    : expectedRole === "authority"
-                    ? "AUTHORITY ACCESS"
-                    : ""}
-                </span>
+                <span className="section-label">SECURE ACCESS</span>
 
                 <h2>Welcome back</h2>
 
@@ -155,6 +121,10 @@ function Login({ expectedRole = null }) {
                   <span>{error}</span>
                 </div>
               )}
+
+              <div className="auth-divider auth-divider-alt">
+                <span>USE YOUR EMAIL</span>
+              </div>
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
@@ -236,10 +206,7 @@ function Login({ expectedRole = null }) {
               </form>
 
               <div className="oauth-heading">Or sign in with</div>
-              <OAuthButtons
-                onCredential={handleProviderCredential}
-                disabled={loading}
-              />
+              <OAuthButtons onCredential={handleProviderCredential} disabled={loading} />
 
               <div className="auth-divider">
                 <span>NEW TO SENETRY?</span>
@@ -248,10 +215,13 @@ function Login({ expectedRole = null }) {
               <Link to="/signup" className="secondary-auth-button">
                 Create an account
               </Link>
+
             </section>
 
             <div className="auth-security-note">
-             
+              <span className="security-dot"></span>
+
+              <span>Protected operational access</span>
             </div>
           </div>
         </div>

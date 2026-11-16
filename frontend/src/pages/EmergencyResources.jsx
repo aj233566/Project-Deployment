@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { emergencyApi, resourcesApi } from "../services/api";
 import "../css/EmergencyResources.css";
+
 const ICON_BY_CATEGORY = {
   "MEDICAL TRANSPORT": "🚑",
   AMBULANCE: "🚑",
@@ -8,11 +9,21 @@ const ICON_BY_CATEGORY = {
   NDRF: "🧑‍🚒",
   SDRF: "🧑‍🚒",
 };
+
+// API service methods return the JSON response body. Collection endpoints in
+// this project use { success, count, data }, while this helper also accepts
+// a plain array for compatibility with alternate response shapes.
 function responseData(response) {
   if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
   if (Array.isArray(response)) return response;
   return [];
 }
+
+function getErrorMessage(error, fallback) {
+  return error?.response?.data?.message || error?.message || fallback;
+}
+
 function EmergencyResources() {
   const [resources, setResources] = useState([]);
   const [deployments, setDeployments] = useState([]);
@@ -20,60 +31,106 @@ function EmergencyResources() {
   const [resourceError, setResourceError] = useState("");
   const [deploymentError, setDeploymentError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
+
   useEffect(() => {
     let active = true;
-    Promise.allSettled([
-      resourcesApi.getResources(),
-      emergencyApi.getPrioritisedAreas(),
-    ]).then(([resourceResult, deploymentResult]) => {
+
+    const loadRecords = async () => {
+      setLoading(true);
+
+      const [resourceResult, deploymentResult] = await Promise.allSettled([
+        resourcesApi.getResources(),
+        emergencyApi.getPrioritisedAreas(),
+      ]);
+
       if (!active) return;
+
       if (resourceResult.status === "fulfilled") {
         setResources(responseData(resourceResult.value));
         setResourceError("");
       } else {
-        console.error("Emergency resource inventory unavailable:", resourceResult.reason);
+        console.error(
+          "Emergency resource inventory unavailable:",
+          resourceResult.reason,
+        );
         setResources([]);
-        setResourceError(resourceResult.reason?.message || "Unable to load resource inventory.");
+        setResourceError(
+          getErrorMessage(
+            resourceResult.reason,
+            "Unable to load resource inventory.",
+          ),
+        );
       }
+
       if (deploymentResult.status === "fulfilled") {
         setDeployments(responseData(deploymentResult.value));
         setDeploymentError("");
       } else {
-        console.error("Emergency dispatch records unavailable:", deploymentResult.reason);
+        console.error(
+          "Emergency dispatch records unavailable:",
+          deploymentResult.reason,
+        );
         setDeployments([]);
-        setDeploymentError(deploymentResult.reason?.message || "Unable to load dispatch records.");
+        setDeploymentError(
+          getErrorMessage(
+            deploymentResult.reason,
+            "Unable to load dispatch records.",
+          ),
+        );
       }
-    }).finally(() => {
-      if (active) setLoading(false);
+
+      setLoading(false);
+    };
+
+    loadRecords().catch((error) => {
+      if (!active) return;
+      console.error("Emergency resource page load failed:", error);
+      setResourceError(getErrorMessage(error, "Unable to load emergency resources."));
+      setLoading(false);
     });
+
     return () => {
       active = false;
     };
   }, [reloadToken]);
+
   const totals = useMemo(() => {
-    const sum = (key) => resources.length === 0
-      ? 0
-      : resources.every((resource) => Number.isFinite(resource[key]))
+    const sum = (key) => {
+      if (resources.length === 0) return 0;
+
+      return resources.every((resource) => Number.isFinite(resource[key]))
         ? resources.reduce((total, resource) => total + resource[key], 0)
         : null;
+    };
+
     return {
       total: sum("total"),
       available: sum("available"),
       deployed: sum("deployed"),
     };
   }, [resources]);
-  const activeDeployments = deployments.filter((item) =>
-    item.assignedTeam
-    && !["Awaiting Dispatch", "Resolved", "Closed"].includes(item.responseStatus)
+
+  const activeDeployments = deployments.filter(
+    (item) =>
+      item.assignedTeam &&
+      !["Awaiting Dispatch", "Resolved", "Closed"].includes(item.responseStatus),
   );
-  const recordStatus = loading ? "loading" : resourceError || deploymentError ? "unavailable" : "loaded";
+
+  const recordStatus = loading
+    ? "loading"
+    : resourceError || deploymentError
+      ? "unavailable"
+      : "loaded";
+
   const retry = () => {
-    setLoading(true);
     setResourceError("");
     setDeploymentError("");
     setReloadToken((value) => value + 1);
   };
-  const formatCount = (value) => loading || value === null ? "Unavailable" : value.toLocaleString();
+
+  const formatCount = (value) =>
+    loading || value === null ? "Unavailable" : value.toLocaleString();
+
   return (
     <main className="emergency-resources-page">
       <header className="emergency-resources-header">
@@ -83,72 +140,141 @@ function EmergencyResources() {
             Recorded resource inventory and active dispatch assignments.
           </p>
         </div>
-        <div className={`emergency-resources-status is-${recordStatus}`}>
-          {loading ? "Loading records" : resourceError || deploymentError ? "Some records unavailable" : "Records loaded"}
+        <div className={`emergency-resources-status is-${recordStatus}`} role="status">
+          {loading
+            ? "Loading records"
+            : resourceError || deploymentError
+              ? "Some records unavailable"
+              : "Records loaded"}
         </div>
       </header>
 
-      {(resourceError || deploymentError) ? (
+      {resourceError || deploymentError ? (
         <div className="alert alert-danger" role="alert">
           {[resourceError, deploymentError].filter(Boolean).join(" ")}
-          <button type="button" className="btn btn-link" onClick={retry}>Retry</button>
+          <button type="button" className="btn btn-link" onClick={retry}>
+            Retry
+          </button>
         </div>
       ) : null}
 
       <section className="emergency-summary" aria-label="Recorded resource totals">
-        <Summary label="Total units" value={formatCount(resourceError ? null : totals.total)} detail="Sum of recorded inventory totals" />
-        <Summary label="Available units" value={formatCount(resourceError ? null : totals.available)} detail="Sum of recorded available quantities" />
-        <Summary label="Deployed units" value={formatCount(resourceError ? null : totals.deployed)} detail="Sum of recorded deployed quantities" />
+        <Summary
+          label="Total units"
+          value={formatCount(resourceError ? null : totals.total)}
+          detail="Sum of recorded inventory totals"
+        />
+        <Summary
+          label="Available units"
+          value={formatCount(resourceError ? null : totals.available)}
+          detail="Sum of recorded available quantities"
+        />
+        <Summary
+          label="Deployed units"
+          value={formatCount(resourceError ? null : totals.deployed)}
+          detail="Sum of recorded deployed quantities"
+        />
       </section>
 
       <section className="emergency-resources-section">
         <div className="emergency-resources-section-header">
           <div>
             <h2 className="emergency-resources-section-title">Resource Availability</h2>
-            <p className="emergency-resources-section-subtitle">Values are taken from the configured resource inventory.</p>
+            <p className="emergency-resources-section-subtitle">
+              Values are taken from the configured resource inventory.
+            </p>
           </div>
         </div>
+
         <div className="emergency-resources-section-body">
           {loading ? <p role="status">Loading resource inventory…</p> : null}
-          {!loading && resourceError ? <p className="text-muted mb-0">Resource records could not be loaded.</p> : null}
+
+          {!loading && resourceError ? (
+            <p className="text-muted mb-0">Resource records could not be loaded.</p>
+          ) : null}
+
           {!loading && !resourceError && resources.length === 0 ? (
             <p className="text-muted mb-0">No resource records are registered.</p>
           ) : null}
+
           {!loading && !resourceError && resources.length > 0 ? (
             <div className="emergency-resource-grid">
               {resources.map((resource, index) => {
                 const total = Number.isFinite(resource.total) ? resource.total : null;
-                const available = Number.isFinite(resource.available) ? resource.available : null;
-                const percentage = total > 0 && available !== null
-                  ? Math.max(0, Math.min(100, Math.round(available / total * 100)))
+                const available = Number.isFinite(resource.available)
+                  ? resource.available
                   : null;
+                const percentage =
+                  total > 0 && available !== null
+                    ? Math.max(0, Math.min(100, Math.round((available / total) * 100)))
+                    : null;
                 const category = String(resource.category || "").toUpperCase();
-                const progressClass = percentage === null ? "" : percentage <= 20
-                  ? "emergency-resource-progress-critical"
-                  : percentage <= 40 ? "emergency-resource-progress-low"
-                    : percentage <= 60 ? "emergency-resource-progress-warning" : "";
+                const progressClass =
+                  percentage === null
+                    ? ""
+                    : percentage <= 20
+                      ? "emergency-resource-progress-critical"
+                      : percentage <= 40
+                        ? "emergency-resource-progress-low"
+                        : percentage <= 60
+                          ? "emergency-resource-progress-warning"
+                          : "";
+
                 return (
-                  <article className="emergency-resource-card" key={resource._id || resource.id || `${category}-${index}`}>
+                  <article
+                    className="emergency-resource-card"
+                    key={resource._id || resource.id || `${category}-${index}`}
+                  >
                     <div className="emergency-resource-top">
-                      <div className="emergency-resource-icon">{ICON_BY_CATEGORY[category] || "📦"}</div>
-                      <span className="emergency-resource-status">{resource.status || "Status not recorded"}</span>
+                      <div className="emergency-resource-icon">
+                        {ICON_BY_CATEGORY[category] || "📦"}
+                      </div>
+                      <span className="emergency-resource-status">
+                        {resource.status || "Status not recorded"}
+                      </span>
                     </div>
-                    <h3 className="emergency-resource-name">{resource.name || "Unnamed resource"}</h3>
-                    <p className="emergency-resource-description">{resource.description || category || "Category not recorded"}</p>
+
+                    <h3 className="emergency-resource-name">
+                      {resource.name || "Unnamed resource"}
+                    </h3>
+                    <p className="emergency-resource-description">
+                      {resource.description || category || "Category not recorded"}
+                    </p>
+
                     <div className="emergency-resource-count">
-                      <span className="emergency-resource-available">{available === null ? "Unavailable" : available.toLocaleString()}</span>
-                      <span className="emergency-resource-total">/ {total === null ? "Unavailable" : `${total.toLocaleString()} units`}</span>
+                      <span className="emergency-resource-available">
+                        {available === null ? "Unavailable" : available.toLocaleString()}
+                      </span>
+                      <span className="emergency-resource-total">
+                        / {total === null ? "Unavailable" : `${total.toLocaleString()} units`}
+                      </span>
                     </div>
+
                     {percentage === null ? (
-                      <p className="emergency-resource-status-text">Availability ratio unavailable.</p>
+                      <p className="emergency-resource-status-text">
+                        Availability ratio unavailable.
+                      </p>
                     ) : (
                       <>
-                        <div className="emergency-resource-progress" aria-label={`${percentage}% available`}>
-                          <div className={`emergency-resource-progress-bar ${progressClass}`} style={{ width: `${percentage}%` }} />
+                        <div
+                          className="emergency-resource-progress"
+                          role="progressbar"
+                          aria-label="Resource availability"
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={percentage}
+                        >
+                          <div
+                            className={`emergency-resource-progress-bar ${progressClass}`}
+                            style={{ width: `${percentage}%` }}
+                          />
                         </div>
-                        <p className="emergency-resource-status-text">{percentage}% of recorded units available</p>
+                        <p className="emergency-resource-status-text">
+                          {percentage}% of recorded units available
+                        </p>
                       </>
                     )}
+
                     <p className="emergency-resource-status-text mb-0">
                       Location: {resource.location || "Not recorded"}
                     </p>
@@ -163,29 +289,45 @@ function EmergencyResources() {
       <section className="emergency-resources-section">
         <div className="emergency-resources-section-header">
           <div>
-            <h2 className="emergency-resources-section-title">Active Dispatch Assignments</h2>
-            <p className="emergency-resources-section-subtitle">Assignments linked to unresolved incidents.</p>
+            <h2 className="emergency-resources-section-title">
+              Active Dispatch Assignments
+            </h2>
+            <p className="emergency-resources-section-subtitle">
+              Assignments linked to unresolved incidents.
+            </p>
           </div>
         </div>
+
         <div className="emergency-resources-section-body">
-          {deploymentError ? <p className="text-muted mb-0">Dispatch records could not be loaded.</p> : null}
+          {deploymentError ? (
+            <p className="text-muted mb-0">Dispatch records could not be loaded.</p>
+          ) : null}
+
           {!deploymentError && !loading && activeDeployments.length === 0 ? (
             <p className="text-muted mb-0">No active dispatch assignments are recorded.</p>
           ) : null}
+
           {activeDeployments.length > 0 ? (
             <div className="emergency-deployment-list">
               {activeDeployments.map((item) => (
-                <article className="emergency-deployment-item" key={item.incidentId || item.id}>
+                <article
+                  className="emergency-deployment-item"
+                  key={item.incidentId || item.id}
+                >
                   <div className="emergency-deployment-info">
                     <div className="emergency-deployment-icon">🚨</div>
                     <div>
-                      <h3 className="emergency-deployment-name">{item.location || "Location not recorded"}</h3>
+                      <h3 className="emergency-deployment-name">
+                        {item.location || "Location not recorded"}
+                      </h3>
                       <p className="emergency-deployment-location">
                         {item.type || "Incident type not recorded"} · {item.responseStatus || "Status not recorded"}
                       </p>
                     </div>
                   </div>
-                  <span className="emergency-deployment-count">{item.assignedTeam}</span>
+                  <span className="emergency-deployment-count">
+                    {item.assignedTeam}
+                  </span>
                 </article>
               ))}
             </div>
@@ -197,20 +339,26 @@ function EmergencyResources() {
         <div className="emergency-resources-section-header">
           <div>
             <h2 className="emergency-resources-section-title">Emergency Contact</h2>
-            <p className="emergency-resources-section-subtitle">National emergency number shown by this application.</p>
+            <p className="emergency-resources-section-subtitle">
+              National emergency number shown by this application.
+            </p>
           </div>
         </div>
+
         <div className="emergency-resources-section-body">
           <a className="emergency-contact" href="tel:112">
             <h3 className="emergency-contact-name">Emergency response</h3>
             <span className="emergency-contact-number">112</span>
-            <span className="emergency-contact-label">Call the national emergency number</span>
+            <span className="emergency-contact-label">
+              Call the national emergency number
+            </span>
           </a>
         </div>
       </section>
     </main>
   );
 }
+
 function Summary({ label, value, detail }) {
   return (
     <article className="emergency-summary-card">
@@ -220,4 +368,5 @@ function Summary({ label, value, detail }) {
     </article>
   );
 }
+
 export default EmergencyResources;

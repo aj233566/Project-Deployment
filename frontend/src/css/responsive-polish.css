@@ -58,14 +58,14 @@ body {
   box-shadow: 0 5px 16px rgba(79, 124, 138, 0.42);
 }
 .btn-danger {
-  background-image: linear-gradient(180deg, #e05b5b, #d64545);
-  background-color: #d64545;
-  border-color: #d64545;
+  background-image: linear-gradient(180deg, #e05b5b, var(--risk-critical));
+  background-color: var(--risk-critical);
+  border-color: var(--risk-critical);
   color: #fff;
-  box-shadow: 0 2px 10px rgba(214, 69, 69, 0.28);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--risk-critical) 28%, transparent);
 }
 .btn-danger:hover {
-  box-shadow: 0 5px 16px rgba(214, 69, 69, 0.42);
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--risk-critical) 42%, transparent);
 }
 .btn-outline-primary {
   color: #8fb9c6;
@@ -80,14 +80,14 @@ body {
   box-shadow: 0 5px 16px rgba(79, 124, 138, 0.38);
 }
 .btn-outline-danger {
-  border-color: rgba(214, 69, 69, 0.6);
+  border-color: color-mix(in srgb, var(--risk-critical) 60%, transparent);
 }
 .btn-outline-danger:hover {
-  background-image: linear-gradient(180deg, #e05b5b, #d64545);
-  background-color: #d64545;
-  border-color: #d64545;
+  background-image: linear-gradient(180deg, #e05b5b, var(--risk-critical));
+  background-color: var(--risk-critical);
+  border-color: var(--risk-critical);
   color: #fff;
-  box-shadow: 0 5px 16px rgba(214, 69, 69, 0.35);
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--risk-critical) 35%, transparent);
 }
 .citizen-btn {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
@@ -122,7 +122,7 @@ body {
   right: 0;
   height: 3px;
   border-radius: 14px 14px 0 0;
-  background: linear-gradient(90deg, #4f7c8a, #3d8b63);
+  background: linear-gradient(90deg, #4f7c8a, var(--risk-low));
   opacity: 0.85;
   pointer-events: none;                                               
 }
@@ -143,7 +143,7 @@ body {
     min-height: 0;
     padding: 8px 10px;
     border-right: none;
-    border-bottom: 1px solid #303b40;
+    border-bottom: 1px solid var(--border);
     overflow-x: auto;
     overflow-y: hidden;
   }

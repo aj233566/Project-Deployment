@@ -73,27 +73,7 @@ function AppRoutes() {
           }
         />
 
-        <Route
-          path="/login/citizen"
-          element={
-            getToken() && getStoredUser()?.role === "citizen" ? (
-              <Navigate to={getHomePath()} replace />
-            ) : (
-              <Login expectedRole="citizen" />
-            )
-          }
-        />
-
-        <Route
-          path="/login/authority"
-          element={
-            getToken() && getStoredUser()?.role === "authority" ? (
-              <Navigate to={getHomePath()} replace />
-            ) : (
-              <Login expectedRole="authority" />
-            )
-          }
-        />
+        <Route path="/login/*" element={<Navigate to="/login" replace />} />
 
         <Route path="/forgot-password" element={<ForgotPassword />} />
 

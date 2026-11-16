@@ -6,6 +6,10 @@ const RISK_LEVELS = {
   ORANGE: "HIGH",
   RED: "CRITICAL",
 };
+function toLocalDateTimeInput(date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
 function TargetedAlertComposer() {
   const { loadAlerts } = useAlerts();
   const [habitations, setHabitations] = useState([]);
@@ -13,7 +17,7 @@ function TargetedAlertComposer() {
   const [targetType, setTargetType] = useState("habitations");
   const [radiusKm, setRadiusKm] = useState("");
   const [action, setAction] = useState("");
-  const [expiresAt, setExpiresAt] = useState("");
+  const [expiresAt, setExpiresAt] = useState(() => toLocalDateTimeInput(new Date(Date.now() + 6 * 60 * 60 * 1000)));
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -91,7 +95,7 @@ function TargetedAlertComposer() {
           : selected.name;
       setMessage(`Alert saved for ${targetLabel} (${count} registered habitation${count === 1 ? "" : "s"}). ${response.data.residentDelivery}`);
       setAction("");
-      setExpiresAt("");
+      setExpiresAt(toLocalDateTimeInput(new Date(Date.now() + 6 * 60 * 60 * 1000)));
       setRadiusKm("");
     } catch (submitError) {
       setError(submitError.message || "Unable to save the geo-targeted alert.");
@@ -109,10 +113,11 @@ function TargetedAlertComposer() {
     <section className="ops-panel mb-4" aria-labelledby="targeted-alert-heading">
       <div className="ops-panel-header">
         <h2 className="ops-panel-title" id="targeted-alert-heading">Create geo-targeted alert</h2>
+        <span className="alert-composer-tag">Authority reviewed</span>
       </div>
       <div className="p-3">
         <p className="text-muted">
-          Target an assessed habitation, habitations sharing its recorded SENTRY risk classification, or registered habitations within a radius. Resident delivery is not configured; alerts are saved for operational review.
+          Create an operational advisory for a single assessed habitation, its risk zone, or nearby registered habitations. Alerts are saved for review; resident delivery is not configured.
         </p>
         {loading ? <p role="status">Loading assessed habitations…</p> : null}
         {habitationError ? (
@@ -201,7 +206,7 @@ function TargetedAlertComposer() {
                   id="alert-expiry"
                   className="form-control"
                   type="datetime-local"
-                  min={new Date().toISOString().slice(0, 16)}
+                  min={toLocalDateTimeInput(new Date())}
                   value={expiresAt}
                   onChange={(event) => setExpiresAt(event.target.value)}
                   required

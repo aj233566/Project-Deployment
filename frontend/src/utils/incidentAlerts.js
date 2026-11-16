@@ -20,8 +20,8 @@ export function newNearbyIncidents(incidents, seen, origin, radiusKm = ALERT_RAD
     if (!id || seen.has(id)) continue;
     if (!SERIOUS.has(String(incident.severity || '').toLowerCase())) continue;
     if (String(incident.status || '').toLowerCase() === 'resolved') continue;
-    const lat = incident?.location?.lat;
-    const lng = incident?.location?.lng;
+    const lat = incident?.location?.latitude ?? incident?.location?.lat;
+    const lng = incident?.location?.longitude ?? incident?.location?.lng;
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
     const km = directKm(origin.lat, origin.lng, lat, lng);
     if (km > radiusKm) continue;

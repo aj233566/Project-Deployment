@@ -58,16 +58,11 @@ function CitizenRiskCard({
     riskData?.recommendations ?? [];
   const getLevelClass = (level) => {
     switch (level) {
-      case "CRITICAL":
-        return "bg-danger";
-      case "HIGH":
-        return "bg-warning text-dark";
-      case "MODERATE":
-        return "bg-warning text-dark";
-      case "LOW":
-        return "bg-success";
-      default:
-        return "bg-secondary";
+      case "CRITICAL": return "risk-indicator--critical";
+      case "HIGH": return "risk-indicator--high";
+      case "MODERATE": return "risk-indicator--moderate";
+      case "LOW": return "risk-indicator--low";
+      default: return "risk-indicator--unknown";
     }
   };
   if (loading) {

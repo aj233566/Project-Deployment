@@ -1,21 +1,51 @@
 :root {
-    --bg: #101416;
-    --bg-secondary: #171C1F;
-    --card: #1D2427;
-    --elevated: #242D31;
-    --border: #303B40;
-    --critical: #D64545;
-    --high: #D97732;
-    --warning: #C9A227;
-    --safe: #3D8B63;
-    --info: #4F7C8A;
-    --text: #F2F4F5;
-    --text-secondary: #B6C0C4;
-    --text-muted: #7F8A8F;
-    --disabled: #566166;
-    --focus: #4F7C8A;
-    --hover: #303B40;
-    --radius: 6px;
+  --bg: var(--stone);
+  --bg-primary: var(--stone);
+  --bg-secondary: var(--paper);
+  --card: var(--paper);
+  --surface: var(--paper);
+  --surface-elevated: var(--stone);
+  --elevated: var(--surface-elevated);
+  --border: var(--line);
+  --border-light: var(--line);
+  --critical: var(--risk-critical);
+  --critical-bg: color-mix(in srgb, var(--risk-critical) 14%, var(--paper));
+  --critical-border: var(--risk-critical);
+  --high: var(--risk-high);
+  --high-risk: var(--risk-high);
+  --high-risk-bg: color-mix(in srgb, var(--risk-high) 14%, var(--paper));
+  --high-risk-border: var(--risk-high);
+  --warning: var(--risk-moderate);
+  --warning-bg: color-mix(in srgb, var(--risk-moderate) 16%, var(--paper));
+  --warning-border: var(--risk-moderate);
+  --safe: var(--risk-low);
+  --safe-bg: color-mix(in srgb, var(--risk-low) 14%, var(--paper));
+  --safe-border: var(--risk-low);
+  --info: var(--slate);
+  --info-bg: color-mix(in srgb, var(--slate) 10%, var(--paper));
+  --info-border: var(--slate);
+  --text: var(--ink);
+  --text-primary: var(--ink);
+  --text-secondary: var(--slate);
+  --text-muted: var(--slate);
+  --disabled: #888888;
+  --text-disabled: #888888;
+  --focus: var(--ink);
+  --hover: color-mix(in srgb, var(--paper) 82%, var(--ink));
+  --land: var(--map-land);
+  --water: var(--map-water);
+  --roads: var(--map-roads);
+  --buildings: var(--map-buildings);
+  --admin-border: var(--map-borders);
+  --cascade-critical: var(--risk-critical);
+  --cascade-high: var(--risk-high);
+  --cascade-warning: var(--risk-moderate);
+  --cascade-success: var(--risk-low);
+  --radius: 6px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --sidebar-width: 260px;
 }
 * {
     box-sizing: border-box;
@@ -354,13 +384,13 @@ select.auth-input option {
     line-height: 1.5;
 }
 .auth-message-error {
-    background: rgba(214, 69, 69, 0.08);
-    border-color: rgba(214, 69, 69, 0.4);
+    background: color-mix(in srgb, var(--risk-critical) 8%, transparent);
+    border-color: color-mix(in srgb, var(--risk-critical) 40%, transparent);
     color: #e88a8a;
 }
 .auth-message-success {
-    background: rgba(61, 139, 99, 0.08);
-    border-color: rgba(61, 139, 99, 0.4);
+    background: color-mix(in srgb, var(--risk-low) 8%, transparent);
+    border-color: color-mix(in srgb, var(--risk-low) 40%, transparent);
     color: #86c5a3;
 }
 .message-icon {
@@ -471,7 +501,7 @@ select.auth-input option {
     margin-top: 12px;
     padding: 12px 14px;
     border-left: 3px solid var(--warning);
-    background: rgba(201, 162, 39, 0.07);
+    background: color-mix(in srgb, var(--risk-moderate) 7%, transparent);
 }
 .authority-note strong {
     color: var(--warning);
@@ -616,25 +646,25 @@ select.auth-input option {
     }
 }
 :root {
-    --cascade-bg: #101416;
-    --cascade-bg-secondary: #171C1F;
-    --cascade-card: #1D2427;
-    --cascade-elevated: #242D31;
-    --cascade-border: #303B40;
-    --cascade-critical: #D64545;
-    --cascade-high: #D97732;
-    --cascade-warning: #C9A227;
-    --cascade-success: #3D8B63;
-    --cascade-info: #4F7C8A;
-    --cascade-land: #20282B;
-    --cascade-water: #1B3942;
-    --cascade-road: #59656A;
-    --cascade-building: #293236;
-    --cascade-admin-line: #3A4549;
-    --cascade-text: #F2F4F5;
-    --cascade-text-secondary: #B6C0C4;
-    --cascade-text-muted: #7F8A8F;
-    --cascade-disabled: #566166;
+    --cascade-bg: var(--bg-primary);
+    --cascade-bg-secondary: var(--bg-secondary);
+    --cascade-card: var(--surface);
+    --cascade-elevated: var(--surface-elevated);
+    --cascade-border: var(--border);
+    --cascade-critical: var(--risk-critical);
+    --cascade-high: var(--risk-high);
+    --cascade-warning: var(--risk-moderate);
+    --cascade-success: var(--risk-low);
+    --cascade-info: var(--slate);
+    --cascade-land: var(--map-land);
+    --cascade-water: var(--map-water);
+    --cascade-road: var(--map-roads);
+    --cascade-building: var(--map-buildings);
+    --cascade-admin-line: var(--map-borders);
+    --cascade-text: var(--text-primary);
+    --cascade-text-secondary: var(--text-secondary);
+    --cascade-text-muted: var(--text-muted);
+    --cascade-disabled: var(--text-disabled);
     --cascade-radius: 6px;
 }
 .cascade-dashboard-page {
@@ -830,26 +860,25 @@ select.auth-input option {
     padding: 0.35rem 0.5rem;
 }
 .cascade-severity-critical {
-    background: rgba(214, 69, 69, 0.14);
-    border-color: var(--cascade-critical);
-    color: #F29A9A;
+  background: color-mix(in srgb, var(--risk-critical) 15%, var(--paper));
+  border-color: var(--risk-critical);
+  color: var(--risk-critical-ink);
 }
 .cascade-severity-high {
-    background: rgba(217, 119, 50, 0.14);
-    border-color: var(--cascade-high);
-    color: #E9A56F;
+  background: color-mix(in srgb, var(--risk-high) 15%, var(--paper));
+  border-color: var(--risk-high);
+  color: var(--risk-high-ink);
 }
 .cascade-severity-moderate {
-    background: rgba(201, 162, 39, 0.14);
-    border-color: var(--cascade-warning);
-    color: #E0C65E;
+  background: color-mix(in srgb, var(--risk-moderate) 18%, var(--paper));
+  border-color: var(--risk-moderate);
+  color: var(--risk-moderate-ink);
 }
 .cascade-severity-low {
-    background: rgba(61, 139, 99, 0.14);
-    border-color: var(--cascade-success);
-    color: #76B994;
-}
-.cascade-severity-neutral,
+  background: color-mix(in srgb, var(--risk-low) 15%, var(--paper));
+  border-color: var(--risk-low);
+  color: var(--risk-low-ink);
+}.cascade-severity-neutral,
 .cascade-status-neutral {
     background: rgba(79, 124, 138, 0.12);
     border-color: var(--cascade-border);
@@ -861,12 +890,12 @@ select.auth-input option {
     color: #8BB1BC;
 }
 .cascade-status-warning {
-    background: rgba(201, 162, 39, 0.14);
+    background: color-mix(in srgb, var(--risk-moderate) 14%, transparent);
     border-color: var(--cascade-warning);
     color: #E0C65E;
 }
 .cascade-status-success {
-    background: rgba(61, 139, 99, 0.14);
+    background: color-mix(in srgb, var(--risk-low) 14%, transparent);
     border-color: var(--cascade-success);
     color: #76B994;
 }
@@ -917,13 +946,13 @@ select.auth-input option {
 .cascade-btn-success {
     background: var(--cascade-success);
     border: 1px solid var(--cascade-success);
-    color: #F2F4F5;
+    color: var(--text-primary);
 }
 .cascade-btn-success:hover,
 .cascade-btn-success:focus {
     background: #347754;
     border-color: #347754;
-    color: #F2F4F5;
+    color: var(--text-primary);
 }
 .cascade-btn-danger {
     background: var(--cascade-critical);
@@ -964,12 +993,12 @@ select.auth-input option {
     padding: 0.85rem 1rem;
 }
 .cascade-alert-danger {
-    background: rgba(214, 69, 69, 0.1);
+    background: color-mix(in srgb, var(--risk-critical) 10%, transparent);
     border-color: var(--cascade-critical);
     color: var(--cascade-text);
 }
 .cascade-alert-success {
-    background: rgba(61, 139, 99, 0.14);
+    background: color-mix(in srgb, var(--risk-low) 14%, transparent);
     border: 1px solid var(--cascade-success);
     border-radius: var(--cascade-radius);
     color: var(--cascade-text);
@@ -1184,7 +1213,7 @@ select.auth-input option {
     padding: 1rem;
 }
 .cascade-rejection-notice {
-    background: rgba(214, 69, 69, 0.08);
+    background: color-mix(in srgb, var(--risk-critical) 8%, transparent);
     border: 1px solid var(--cascade-critical);
     border-radius: 4px;
     color: var(--cascade-text-secondary);
@@ -1263,3 +1292,29 @@ select.auth-input option {
 .min-w-0 {
     min-width: 0;
 }
+
+
+/* Shared semantic surface, text, and risk tokens for every application view. */
+html, body, #root { background-color: var(--stone); color: var(--ink); }
+body { transition: background-color 160ms ease, color 160ms ease; }
+.card, .modal-content, .dropdown-menu, .list-group-item, .accordion-item {
+  background-color: var(--paper);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.table { --bs-table-bg: var(--paper); --bs-table-color: var(--slate); --bs-table-border-color: var(--line); }
+.form-control, .form-select, .form-control:focus, .form-select:focus {
+  background-color: var(--surface-elevated);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.form-control::placeholder { color: var(--slate); opacity: 0.78; }
+.btn-primary { background-color: var(--ink); border-color: var(--ink); color: var(--stone); }
+.btn-primary:hover, .btn-primary:focus-visible { background-color: color-mix(in srgb, var(--ink) 86%, var(--slate)); border-color: var(--ink); color: var(--stone); }
+.btn-outline-light, .btn-outline-secondary { border-color: var(--line); color: var(--ink); }
+.btn-outline-light:hover, .btn-outline-secondary:hover { background: var(--paper); border-color: var(--slate); color: var(--ink); }
+.risk-indicator--low { border: 1px solid var(--risk-low); background: color-mix(in srgb, var(--risk-low) 15%, var(--paper)); color: var(--risk-low-ink); }
+.risk-indicator--moderate { border: 1px solid var(--risk-moderate); background: color-mix(in srgb, var(--risk-moderate) 18%, var(--paper)); color: var(--risk-moderate-ink); }
+.risk-indicator--high { border: 1px solid var(--risk-high); background: color-mix(in srgb, var(--risk-high) 15%, var(--paper)); color: var(--risk-high-ink); }
+.risk-indicator--critical { border: 1px solid var(--risk-critical); background: color-mix(in srgb, var(--risk-critical) 15%, var(--paper)); color: var(--risk-critical-ink); }
+.risk-indicator--unknown { border: 1px solid var(--line); background: var(--paper); color: var(--slate); }

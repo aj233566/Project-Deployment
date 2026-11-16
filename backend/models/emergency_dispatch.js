@@ -12,6 +12,12 @@ const emergencyDispatchSchema = new mongoose.Schema(
             required: [true, "Response unit is required"],
             trim: true
         },
+        resourceRef: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Resource",
+            default: null,
+            index: true
+        },
         status: {
             type: String,
             enum: [

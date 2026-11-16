@@ -5,18 +5,18 @@
    All font sizes below therefore come from the --t-* tokens; the tokens clamp to that range at every screen width. */
 
 .india-command-center {
-  --icc-bg: var(--bg-primary, #101416);
-  --icc-panel: var(--surface, #1d2427);
-  --icc-panel-2: var(--surface-elevated, #242d31);
-  --icc-line: var(--border, #303b40);
+  --icc-bg: var(--bg-primary);
+  --icc-panel: var(--surface);
+  --icc-panel-2: var(--surface-elevated);
+  --icc-line: var(--border);
   --icc-line-strong: var(--info, #4f7c8a);
-  --icc-text: var(--text-primary, #f2f4f5);
-  --icc-muted: var(--text-secondary, #b6c0c4);
+  --icc-text: var(--text-primary);
+  --icc-muted: var(--text-secondary);
   --icc-cyan: var(--info, #4f7c8a);
-  --icc-red: var(--critical, #d64545);
-  --icc-orange: var(--high-risk, #d97732);
-  --icc-yellow: var(--warning, #c9a227);
-  --icc-green: var(--safe, #3d8b63);
+  --icc-red: var(--critical, var(--risk-critical));
+  --icc-orange: var(--high-risk, var(--risk-high));
+  --icc-yellow: var(--warning, var(--risk-moderate));
+  --icc-green: var(--safe, var(--risk-low));
   --icc-blue: var(--info, #4f7c8a);
   --icc-display: var(--font-ui, 'Segoe UI', system-ui, sans-serif);
   --icc-body: var(--font-ui, 'Segoe UI', system-ui, sans-serif);
@@ -96,7 +96,7 @@
   min-height: 2.6em;
   padding: 0.4em 0.85em;
   border-bottom: 1px solid var(--icc-line);
-  background: var(--surface-elevated, #242d31);
+  background: var(--surface-elevated);
 }
 .icc-panel-title {
   display: inline-flex;
@@ -322,9 +322,9 @@
 .icc-select span { font: 700 var(--t-s)/1 var(--icc-body); letter-spacing: 0.12em; color: var(--icc-muted); }
 .icc-select select {
   flex: 1 1 auto; width: 100%; min-width: 0; max-width: 100%; text-overflow: ellipsis; padding: 0.4em 0.7em; border: 1px solid var(--icc-line-strong); border-radius: 3px;
-  background: #1d2427; color: #fff; font: 600 var(--t-m)/1.3 var(--icc-body); cursor: pointer;
+  background: var(--surface); color: #fff; font: 600 var(--t-m)/1.3 var(--icc-body); cursor: pointer;
 }
-.icc-select select option, .icc-select select optgroup { background: #1d2427; color: #fff; font-size: var(--t-m); }
+.icc-select select option, .icc-select select optgroup { background: var(--surface); color: #fff; font-size: var(--t-m); }
 .icc-backbtn, .icc-autobtn {
   display: inline-flex; align-items: center; gap: 0.45em; padding: 0.4em 0.8em; border: 1px solid var(--icc-line-strong); border-radius: 3px;
   background: rgba(79, 124, 138, 0.28); color: #fff; font: 700 var(--t-s)/1.2 var(--icc-body); letter-spacing: 0.04em; cursor: pointer;
@@ -344,7 +344,7 @@
 .icc-search input:focus-visible { outline: none; }
 .icc-search:focus-within { border-color: var(--icc-cyan); box-shadow: 0 0 0 1px var(--icc-cyan); }
 .icc-search > button { display: grid; place-items: center; border: 0; background: transparent; color: var(--icc-muted); cursor: pointer; }
-.icc-search-results { position: absolute; z-index: 1500; left: -1px; right: -1px; top: calc(100% + 2px); margin: 0; padding: 0.2em 0; list-style: none; background: #1d2427; border: 1px solid var(--icc-line-strong); box-shadow: 0 1em 2em rgba(0, 0, 0, 0.6); max-height: 20em; overflow: auto; }
+.icc-search-results { position: absolute; z-index: 1500; left: -1px; right: -1px; top: calc(100% + 2px); margin: 0; padding: 0.2em 0; list-style: none; background: var(--surface); border: 1px solid var(--icc-line-strong); box-shadow: 0 1em 2em rgba(0, 0, 0, 0.6); max-height: 20em; overflow: auto; }
 .icc-search-results button { display: block; width: 100%; padding: 0.55em 0.8em; border: 0; background: transparent; text-align: left; color: var(--icc-text); cursor: pointer; }
 .icc-search-results button:hover, .icc-search-results button:focus-visible { background: rgba(79, 124, 138, 0.35); }
 .icc-search-results b { display: block; font-size: var(--t-m); }
@@ -357,7 +357,7 @@
 .icc-chip.active { background: color-mix(in srgb, var(--icc-cyan) 38%, var(--icc-panel)); border-color: var(--icc-cyan); color: #fff; }
 .icc-chip.active b { color: #fff; }
 
-.icc-map-stage { position: relative; flex: 1 1 auto; min-height: 30em; background: #101416; }
+.icc-map-stage { position: relative; flex: 1 1 auto; min-height: 30em; background: var(--bg-primary); }
 .icc-map-stage .gis-app-wrapper.gis-embedded { position: absolute; inset: 0; height: auto; min-height: 0; }
 .icc-controls-dock-content { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
 .icc-controls-dock-content :is(.icc-controls-portal, .icc-ctl) { position: absolute; inset: 0; pointer-events: none; }
@@ -417,8 +417,8 @@
 .icc-side { display: flex; flex-direction: column; gap: 0.7em; min-width: 0; min-height: 0; overflow: hidden auto; scrollbar-width: thin; scrollbar-color: rgba(79, 124, 138, 0.4) transparent; }
 .icc-side > .icc-panel { flex: 0 0 auto; }
 .icc-sat .icc-panel-body { padding: 0.5em; }
-.icc-sat-frame { position: relative; flex: 1 1 auto; min-height: 14em; border: 1px solid var(--icc-line); background: #101416; }
-.icc-sat-map { position: absolute; inset: 0; background: #101416; }
+.icc-sat-frame { position: relative; flex: 1 1 auto; min-height: 14em; border: 1px solid var(--icc-line); background: var(--bg-primary); }
+.icc-sat-map { position: absolute; inset: 0; background: var(--bg-primary); }
 .icc-dark-tiles { filter: invert(1) hue-rotate(180deg) brightness(1.1) contrast(0.95) saturate(0.5); }
 .icc-alerts .icc-panel-body { max-height: none; overflow: visible; }
 .icc-river-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6em; }
@@ -482,7 +482,7 @@
 .icc-roadline b { color: #fff; font-size: var(--t-l); }
 .icc-table-wrap { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: rgba(79, 124, 138, 0.4) transparent; }
 .icc-table { width: 100%; border-collapse: collapse; font-size: var(--t-s); }
-.icc-table th { position: sticky; top: 0; z-index: 1; padding: 0.4em 0.6em; text-align: left; background: #1d2427; color: var(--icc-muted); font: 700 var(--t-s)/1.2 var(--icc-body); letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid var(--icc-line); white-space: nowrap; }
+.icc-table th { position: sticky; top: 0; z-index: 1; padding: 0.4em 0.6em; text-align: left; background: var(--surface); color: var(--icc-muted); font: 700 var(--t-s)/1.2 var(--icc-body); letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid var(--icc-line); white-space: nowrap; }
 .icc-table td { padding: 0.5em 0.6em; border-bottom: 1px solid rgba(79, 124, 138, 0.1); color: #dbe8fb; vertical-align: top; }
 .icc-table tbody tr:hover td { background: rgba(79, 124, 138, 0.16); }
 .icc-cell-wrap { min-width: 9em; max-width: 16em; }
@@ -511,28 +511,28 @@
 /* Keep the embedded map on the same charcoal and muted teal theme as the rest of SENTRY. */
 .india-command-center .icc-map-stage .gis-app-wrapper,
 .india-command-center .icc-controls-dock-content .gis-app-wrapper {
-  --bg-app: var(--bg-primary, #101416);
-  --bg-sidebar: var(--bg-secondary, #171c1f);
-  --bg-card: var(--surface, #1d2427);
-  --bg-elevated: var(--surface-elevated, #242d31);
+  --bg-app: var(--bg-primary);
+  --bg-sidebar: var(--bg-secondary);
+  --bg-card: var(--surface);
+  --bg-elevated: var(--surface-elevated);
   --accent: var(--info, #4f7c8a);
   --accent-strong: var(--info, #4f7c8a);
-  --accent-dim: color-mix(in srgb, var(--info, #4f7c8a) 55%, var(--bg-secondary, #171c1f));
+  --accent-dim: color-mix(in srgb, var(--info, #4f7c8a) 55%, var(--bg-secondary));
   --accent-glow: rgba(79, 124, 138, 0.26);
   --accent-glow-soft: rgba(79, 124, 138, 0.12);
-  --border-subtle: var(--border, #303b40);
+  --border-subtle: var(--border);
   --border-accent: var(--info, #4f7c8a);
-  --color-critical: var(--critical, #d64545);
-  --color-high: var(--high-risk, #d97732);
-  --color-warning: var(--warning, #c9a227);
-  --color-operational: var(--safe, #3d8b63);
+  --color-critical: var(--critical, var(--risk-critical));
+  --color-high: var(--high-risk, var(--risk-high));
+  --color-warning: var(--warning, var(--risk-moderate));
+  --color-operational: var(--safe, var(--risk-low));
   --color-info: var(--info, #4f7c8a);
   --color-primary: var(--info, #4f7c8a);
   --color-selected: var(--info, #4f7c8a);
-  --color-hover: var(--border, #303b40);
-  --text-primary: #f2f4f5;
-  --text-secondary: #b6c0c4;
-  --text-muted: #7f8a8f;
+  --color-hover: var(--border);
+  --text-primary: var(--ink);
+  --text-secondary: var(--slate);
+  --text-muted: var(--slate);
   --fs-2xs: var(--t-s);
   --fs-xs: var(--t-s);
   --fs-sm: var(--t-m);
@@ -542,7 +542,7 @@
   --fs-xl: var(--t-2xl);
   font-size: var(--t-s);
 }
-.india-command-center .icc-map-stage .gis-app-wrapper .leaflet-container { background: #101416; font-size: var(--t-s); line-height: 1.3; }
+.india-command-center .icc-map-stage .gis-app-wrapper .leaflet-container { background: var(--bg-primary); font-size: var(--t-s); line-height: 1.3; }
 .india-command-center .icc-map-stage .gis-app-wrapper .gis-left-rail,
 .india-command-center .icc-map-stage .gis-app-wrapper .gis-controls-overlay { background: var(--bg-secondary) !important; border-color: var(--icc-line) !important; }
 .india-command-center .icc-map-stage .gis-app-wrapper .gis-header { background: var(--bg-secondary); border-bottom: 1px solid var(--icc-line); }
@@ -675,7 +675,7 @@
 }
 
 /* ---------- 3D map (MapLibre) ---------- */
-.icc-gl { position: absolute; inset: 0; z-index: 1300; background: #171c1f; }
+.icc-gl { position: absolute; inset: 0; z-index: 1300; background: var(--bg-secondary); }
 .icc-gl-canvas { position: absolute; inset: 0; }
 .icc-gl-controls { position: absolute; z-index: 6; top: 10px; left: 10px; display: flex; border: 1px solid var(--icc-line-strong); background: rgba(23, 28, 31, 0.88); }
 .icc-gl-controls button { padding: 0.35em 0.9em; border: 0; background: transparent; color: #d6e6fb; font: 700 var(--t-s)/1.2 var(--icc-body); cursor: pointer; }
@@ -687,14 +687,14 @@
 .icc-gl-tip { position: absolute; z-index: 7; pointer-events: none; padding: 0.3em 0.65em; background: rgba(23, 28, 31, 0.94); border: 1px solid var(--icc-line-strong); color: #fff; font-size: var(--t-s); }
 .icc-gl-tip b, .icc-gl-tip span, .icc-gl-tip em { display: block; white-space: nowrap; font-style: normal; }
 .icc-gl-tip em { color: var(--icc-cyan); }
-.india-command-center .maplibregl-popup-content { background: #1d2427; color: #fff; border: 1px solid var(--icc-line-strong); font: 500 var(--t-s)/1.35 var(--icc-body); padding: 0.6em 1.8em 0.6em 0.8em; }
-.india-command-center .maplibregl-popup-tip { border-top-color: #1d2427; border-bottom-color: #1d2427; }
+.india-command-center .maplibregl-popup-content { background: var(--surface); color: #fff; border: 1px solid var(--icc-line-strong); font: 500 var(--t-s)/1.35 var(--icc-body); padding: 0.6em 1.8em 0.6em 0.8em; }
+.india-command-center .maplibregl-popup-tip { border-top-color: var(--surface); border-bottom-color: var(--surface); }
 .india-command-center .maplibregl-popup-close-button { color: #fff; font-size: 22px; }
 .india-command-center .maplibregl-ctrl-attrib, .india-command-center .maplibregl-ctrl-attrib a, .india-command-center .maplibregl-ctrl-scale { font-size: var(--t-s) !important; line-height: 1.3; }
 .india-command-center .maplibregl-ctrl-group button { width: 36px; height: 36px; }
 
 .icc-gl-legend i.heat { height: 0.9em; width: 1.4em; background: linear-gradient(90deg, #4ade80, #facc15, #fb923c, #f87171); }
-.icc-gl-legend i.icon { height: 0.9em; width: 0.9em; border-radius: 50%; border: 2px solid; background: #171c1f; }
+.icc-gl-legend i.icon { height: 0.9em; width: 0.9em; border-radius: 50%; border: 2px solid; background: var(--bg-secondary); }
 .icc-gl-legend { columns: 2; column-gap: 1.2em; max-width: calc(100% - 20px); }
 .icc-gl-legend li { break-inside: avoid; }
 
@@ -705,18 +705,18 @@
 .icc-gl-layers input { width: 1.1em; height: 1.1em; accent-color: var(--icc-cyan); }
 .icc-gl-draw { position: absolute; z-index: 9; top: 58px; left: 10px; display: grid; gap: 0.45em; width: min(24em, calc(100% - 20px)); padding: 0.7em 0.9em; background: rgba(23, 28, 31, 0.96); border: 1px solid var(--icc-line-strong); font-size: var(--t-s); color: #d6e6fb; }
 .icc-gl-draw label { display: grid; gap: 0.15em; }
-.icc-gl-draw input, .icc-gl-draw select { padding: 0.3em 0.5em; border: 1px solid var(--icc-line-strong); background: #1d2427; color: #fff; font: 500 var(--t-s)/1.3 var(--icc-body); }
+.icc-gl-draw input, .icc-gl-draw select { padding: 0.3em 0.5em; border: 1px solid var(--icc-line-strong); background: var(--surface); color: #fff; font: 500 var(--t-s)/1.3 var(--icc-body); }
 .icc-gl-draw-actions { display: flex; gap: 0.5em; }
 .icc-gl-draw-actions button { flex: 1; padding: 0.4em 0.6em; border: 1px solid var(--icc-line-strong); background: transparent; color: #fff; font: 700 var(--t-s)/1.2 var(--icc-body); cursor: pointer; }
 .icc-gl-draw-actions button.primary { background: var(--icc-cyan); color: #04101e; border-color: var(--icc-cyan); }
 .icc-gl-draw-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
 .icc-gl-error { margin: 0; color: #fda4a4; }
-.icc-gl-notice { position: absolute; z-index: 9; top: 10px; left: 50%; transform: translateX(-50%); width: min(40em, calc(100% - 140px)); margin: 0; padding: 0.5em 0.8em; background: color-mix(in srgb, var(--warning, #c9a227) 16%, var(--bg-secondary, #171c1f)); border: 1px solid var(--warning, #c9a227); color: #f2e1a4; font-size: var(--t-s); line-height: 1.3; }
+.icc-gl-notice { position: absolute; z-index: 9; top: 10px; left: 50%; transform: translateX(-50%); width: min(40em, calc(100% - 140px)); margin: 0; padding: 0.5em 0.8em; background: color-mix(in srgb, var(--warning, var(--risk-moderate)) 16%, var(--bg-secondary)); border: 1px solid var(--warning, var(--risk-moderate)); color: #f2e1a4; font-size: var(--t-s); line-height: 1.3; }
 .icc-gl-notice button { margin-left: 0.6em; padding: 0.1em 0.5em; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .icc-gl-legend i.area { height: 0.9em; width: 1.2em; border: 2px solid #fb923c; background: rgba(251, 146, 60, 0.28); border-radius: 3px; }
 
 /* ---------- 3D globe (CesiumJS) ---------- */
-.icc-globe { position: absolute; inset: 0; z-index: 1300; background: #171c1f; }
+.icc-globe { position: absolute; inset: 0; z-index: 1300; background: var(--bg-secondary); }
 .icc-globe-canvas { position: absolute; inset: 0; }
 .icc-globe-canvas .cesium-viewer, .icc-globe-canvas .cesium-viewer-cesiumWidgetContainer, .icc-globe-canvas .cesium-widget { width: 100%; height: 100%; }
 .icc-globe-status { position: absolute; z-index: 5; top: 10px; left: 10px; max-width: min(46em, calc(100% - 20px)); margin: 0; padding: 0.4em 0.7em; background: rgba(23, 28, 31, 0.88); border: 1px solid var(--icc-line-strong); color: #d6e6fb; font-size: var(--t-s); line-height: 1.3; }

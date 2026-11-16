@@ -1,32 +1,32 @@
 .gis-app-wrapper {
-  --bg-app: #0A0E10;
-  --bg-sidebar: #0E1419;
-  --bg-card: #131B20;
-  --bg-elevated: #1C262C;
-  --border-subtle: #223038;
-  --border-accent: #1C7A8C;
-  --accent: #22D3EE;
-  --accent-strong: #67E8F9;
-  --accent-dim: #0E7A8D;
-  --accent-glow: rgba(34, 211, 238, 0.35);
-  --accent-glow-soft: rgba(34, 211, 238, 0.14);
-  --color-critical: #F0555A;
-  --color-high: #F08A3C;
-  --color-warning: #E6B92E;
-  --color-operational: #34C77B;
-  --color-info: #22D3EE;
-  --color-primary: #3B82F6;
-  --color-selected: #22D3EE;
-  --color-hover: #223038;
-  --color-disabled: #566166;
-  --text-primary: #F2F4F5;
-  --text-secondary: #B6C0C4;
-  --text-muted: #7F8A8F;
-  --gis-land: #141A1D;
-  --gis-water: #1B3942;
-  --gis-roads: #59656A;
-  --gis-buildings: #293236;
-  --gis-admin: #3A4549;
+  --bg-app: var(--stone);
+  --bg-sidebar: var(--paper);
+  --bg-card: var(--paper);
+  --bg-elevated: var(--surface-elevated);
+  --border-subtle: var(--line);
+  --border-accent: var(--slate);
+  --accent: var(--slate);
+  --accent-strong: var(--ink);
+  --accent-dim: var(--slate);
+  --accent-glow: color-mix(in srgb, var(--slate) 35%, transparent);
+  --accent-glow-soft: color-mix(in srgb, var(--slate) 14%, transparent);
+  --color-critical: var(--risk-critical);
+  --color-high: var(--risk-high);
+  --color-warning: var(--risk-moderate);
+  --color-operational: var(--risk-low);
+  --color-info: var(--slate);
+  --color-primary: var(--ink);
+  --color-selected: var(--slate);
+  --color-hover: var(--line);
+  --color-disabled: var(--text-disabled);
+  --text-primary: var(--ink);
+  --text-secondary: var(--slate);
+  --text-muted: var(--slate);
+  --gis-land: var(--map-land);
+  --gis-water: var(--map-water);
+  --gis-roads: var(--map-roads);
+  --gis-buildings: var(--map-buildings);
+  --gis-admin: var(--map-borders);
   --font-ui: 'Times New Roman', Times, serif;
   --font-mono: 'Times New Roman', Times, serif;
   --fs-2xs: clamp(14px, 1.1vw, 16px);
@@ -54,6 +54,12 @@ body {
 .gis-app-wrapper {
   background-color: var(--bg-app);
   position: relative;
+  min-height: 0;
+}
+.emergency-gis-map > .gis-app-wrapper.gis-embedded {
+  position: absolute;
+  inset: 0;
+  height: auto;
   min-height: 0;
 }
 .gis-header {
@@ -675,7 +681,7 @@ body {
   flex-shrink: 0;
   border-radius: 2px;
   border: 1.5px dashed var(--color-critical);
-  background-color: rgba(214, 69, 69, 0.25);
+  background-color: color-mix(in srgb, var(--risk-critical) 25%, transparent);
 }
 .leaflet-tooltip,
 .gis-tactical-label-permanent,
@@ -708,7 +714,7 @@ body {
 .leaflet-tooltip.critical-label {
   border-color: var(--color-critical) !important;
   color: #FFAAAA !important;
-  box-shadow: 0 0 8px rgba(214, 69, 69, 0.4) !important;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--risk-critical) 40%, transparent) !important;
 }
 .blocked-road-label,
 .leaflet-tooltip.blocked-road-label {
@@ -793,19 +799,19 @@ body {
   white-space: nowrap;
 }
 .gis-popup-badge-critical {
-  background: rgba(214, 69, 69, 0.18);
+  background: color-mix(in srgb, var(--risk-critical) 18%, transparent);
   color: var(--color-critical);
 }
 .gis-popup-badge-high {
-  background: rgba(217, 119, 50, 0.18);
+  background: color-mix(in srgb, var(--risk-high) 18%, transparent);
   color: var(--color-high);
 }
 .gis-popup-badge-warning {
-  background: rgba(201, 162, 39, 0.18);
+  background: color-mix(in srgb, var(--risk-moderate) 18%, transparent);
   color: var(--color-warning);
 }
 .gis-popup-badge-operational {
-  background: rgba(61, 139, 99, 0.18);
+  background: color-mix(in srgb, var(--risk-low) 18%, transparent);
   color: var(--color-operational);
 }
 .gis-popup-meta-row {
@@ -2108,7 +2114,7 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: #303b40 transparent;
+  scrollbar-color: var(--border) transparent;
 }
 .gis-left-rail::-webkit-scrollbar {
   width: 5px;
@@ -2117,7 +2123,7 @@ body {
   background: transparent;
 }
 .gis-left-rail::-webkit-scrollbar-thumb {
-  background: #303b40;
+  background: var(--border);
   border-radius: 4px;
 }
 .gis-left-rail::-webkit-scrollbar-thumb:hover {
@@ -2911,7 +2917,7 @@ button.gis-cz-cond:hover {
 .gis-role-citizen .leaflet-tooltip.gis-disaster-type-label.sev-critical {
   font-size: 13.2px !important;
   color: #ffe0e1 !important;
-  box-shadow: 0 2px 12px rgba(214, 69, 69, 0.6) !important;
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--risk-critical) 60%, transparent) !important;
 }
 .gis-cz-hazards {
   list-style: none;

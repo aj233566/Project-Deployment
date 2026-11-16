@@ -3,11 +3,12 @@ const {
     getResources,
     getResourceById,
     createResource,
-    updateResource
+    updateResource,
+    deleteResource
 } = require(
     "../controllers/resource_controller"
 );
-const { protect, authorize, authorizeAuthorityOrAdmin } = require("../middlewares/auth_middleware");
+const { protect, authorize, authorizeAuthorityOrAdmin, authorizeVerifiedAuthority } = require("../middlewares/auth_middleware");
 const router = express.Router();
 // Everything here needs a signed-in account. Reading is open to every role; creating and changing resources is for authority and admin
 // accounts only (before, anyone on the network could do all four without signing in).
@@ -31,5 +32,10 @@ router.patch(
     "/:id",
     authorizeAuthorityOrAdmin,
     updateResource
+);
+router.delete(
+    "/:id",
+    authorizeVerifiedAuthority,
+    deleteResource
 );
 module.exports = router;

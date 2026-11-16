@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Flame,
   Layers,
@@ -11,18 +11,57 @@ import {
   Route,
 } from "lucide-react";
 import { useAlerts } from "../../context/useAlerts";
+import { getStoredUser } from "../../context/session";
 import PriorityQueue from "./PriorityQueue";
 import ResponseTable from "./ResponseTable";
 import ResourceStatus from "./ResourceStatus";
 import Modal from "../common/Modal";
+import GisCommandCenter from "../gis/GisCommandCenter";
+import { emergencyApi } from "../../services/api";
+const ADMIN_DISPATCH_UNITS = [
+  { value: "NDRF Quick Response Team Bravo (12 Bn)", label: "NDRF Quick Response Team Bravo (12 Bn)" },
+  { value: "SDRF Heavy Debris Clearing Unit 3", label: "SDRF Heavy Debris Clearing Unit 3" },
+  { value: "Advanced Life Support Ambulance Unit 08", label: "ALS Ambulance Mobile Team 08" },
+  { value: "BRO Heavy Earthmover Taskforce", label: "BRO Heavy Earthmover Taskforce (Swastik)" },
+  { value: "Field Trauma Emergency Medical Squad", label: "Field Trauma Emergency Medical Squad" },
+];
 export const EmergencyPriority = () => {
-  const { emergencyAreas = [], dispatchEmergencyUnit } = useAlerts();
+  const {
+    emergencyAreas = [],
+    dispatchEmergencyUnit,
+    completeEmergencyDispatch,
+    loadEmergencyAreas,
+    resources = [],
+    resourcesLoading,
+    resourcesError,
+  } = useAlerts();
+  const currentUser = getStoredUser();
+  const isAuthority = currentUser?.role === "authority";
+  const canManageAreas = isAuthority && currentUser?.authorityStatus === "verified";
+  const dispatchableResources = resources.filter((resource) =>
+    typeof resource?.name === "string"
+    && resource.name.trim()
+    && Number.isFinite(resource.available)
+    && resource.available > 0
+    && resource.status !== "Unavailable"
+  );
   const [activeView, setActiveView] = useState("board");
   const [dispatchArea, setDispatchArea] = useState(null);
   const [selectedUnit, setSelectedUnit] = useState(
-    "NDRF Quick Response Team Bravo (12 Bn)",
+    isAuthority ? "" : ADMIN_DISPATCH_UNITS[0].value,
   );
   const [dispatchSuccess, setDispatchSuccess] = useState(false);
+  const [completingAreaId, setCompletingAreaId] = useState(null);
+  const [completionMessage, setCompletionMessage] = useState("");
+  const [manageAreas, setManageAreas] = useState(false);
+  const [areaDraft, setAreaDraft] = useState(null);
+  const [areaSaving, setAreaSaving] = useState(false);
+  const [areaError, setAreaError] = useState("");
+  const gisIncidents = useMemo(() => emergencyAreas.map((area) => ({
+    ...area,
+    location: { latitude: area.latitude, longitude: area.longitude, address: area.address || area.location },
+    status: area.incidentStatus || "verified",
+  })), [emergencyAreas]);
   const p1Count = emergencyAreas.filter(
     (area) => area.priorityQueue === "Priority 1",
   ).length;
@@ -34,11 +73,12 @@ export const EmergencyPriority = () => {
   ).length;
   const handleOpenDispatch = (area) => {
     setDispatchArea(area);
+    setSelectedUnit(isAuthority ? dispatchableResources[0]?.name || "" : ADMIN_DISPATCH_UNITS[0].value);
     setDispatchSuccess(false);
   };
   const handleConfirmDispatch = async (event) => {
     event.preventDefault();
-    if (!dispatchArea) {
+    if (!dispatchArea || (isAuthority && !dispatchableResources.some((resource) => resource.name === selectedUnit))) {
       return;
     }
     try {
@@ -61,8 +101,63 @@ export const EmergencyPriority = () => {
       );
     }
   };
+  const handleCompleteDispatch = async (area) => {
+    const areaId = area?.id || area?._id;
+    if (!areaId) return;
+    setCompletionMessage("");
+    setCompletingAreaId(areaId);
+    try {
+      await completeEmergencyDispatch(areaId);
+      setCompletionMessage("Task completed and removed from the active emergency queue. The assigned unit is available again.");
+    } catch (error) {
+      alert(error?.response?.data?.message || error?.message || "Unable to complete this resource task.");
+    } finally {
+      setCompletingAreaId(null);
+    }
+  };
+  const openAreaEditor = (area = null) => {
+    setAreaError("");
+    setAreaDraft(area ? {
+      id: area.id || area._id,
+      type: area.type || "landslide",
+      severity: area.severity || "moderate",
+      description: area.description || "",
+      address: area.address || (typeof area.location === "string" ? area.location : ""),
+      latitude: String(area.latitude ?? ""),
+      longitude: String(area.longitude ?? ""),
+    } : { type: "landslide", severity: "moderate", description: "", address: "", latitude: "", longitude: "" });
+  };
+  const saveArea = async (event) => {
+    event.preventDefault();
+    if (!areaDraft) return;
+    setAreaSaving(true);
+    setAreaError("");
+    const payload = { ...areaDraft, latitude: Number(areaDraft.latitude), longitude: Number(areaDraft.longitude) };
+    delete payload.id;
+    try {
+      if (areaDraft.id) await emergencyApi.updateArea(areaDraft.id, payload);
+      else await emergencyApi.createArea(payload);
+      setAreaDraft(null);
+      await loadEmergencyAreas();
+    } catch (error) {
+      setAreaError(error?.response?.data?.message || error.message || "Unable to save emergency area.");
+    } finally {
+      setAreaSaving(false);
+    }
+  };
+  const deleteArea = async (area) => {
+    if (!window.confirm(`Delete the emergency area at ${area.location || "this location"}?`)) return;
+    setAreaError("");
+    try {
+      await emergencyApi.deleteArea(area.id || area._id);
+      await loadEmergencyAreas();
+    } catch (error) {
+      setAreaError(error?.response?.data?.message || error.message || "Unable to delete emergency area.");
+    }
+  };
   return (
     <div className="container-fluid p-0 emergency-priority-container">
+      {completionMessage ? <div className="alert alert-success" role="status">{completionMessage}</div> : null}
 
       <div className="row g-3 mb-4">
         <div className="col-12 col-sm-6 col-xl-3">
@@ -184,6 +279,7 @@ export const EmergencyPriority = () => {
         </div>
 
         <div className="d-flex align-items-center gap-2 flex-wrap">
+          {canManageAreas ? <button className="btn-ops btn-ops-sm" type="button" aria-expanded={manageAreas} onClick={() => setManageAreas((open) => !open)}>{manageAreas ? "Close area manager" : "Manage areas"}</button> : null}
           <button
             className={`btn-ops btn-ops-sm ${
               activeView === "board" ? "btn-ops-primary" : ""
@@ -219,12 +315,25 @@ export const EmergencyPriority = () => {
         </div>
       </div>
 
+      {manageAreas && canManageAreas ? (
+        <section className="ops-panel p-3 mb-3" aria-label="Manage emergency areas">
+          <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+            <div><h3 className="h5 mb-1">Emergency area records</h3><p className="small text-muted-custom mb-0">Add, correct, or remove active areas. Completed tasks leave the active queue automatically.</p></div>
+            <button className="btn-ops btn-ops-primary" type="button" onClick={() => openAreaEditor()}>Add emergency area</button>
+          </div>
+          {areaError ? <div className="alert alert-danger" role="alert">{areaError}</div> : null}
+          {emergencyAreas.length ? <div className="table-responsive"><table className="ops-table"><thead><tr><th>Location</th><th>Incident</th><th>Severity</th><th>Actions</th></tr></thead><tbody>{emergencyAreas.map((area) => <tr key={area.id || area._id}><td>{area.location || "Unknown location"}</td><td>{String(area.type || "Incident").replaceAll("_", " ")}</td><td>{area.severity || "Not recorded"}</td><td><div className="d-flex gap-2"><button className="btn-ops btn-ops-sm" type="button" onClick={() => openAreaEditor(area)}>Edit</button><button className="btn-ops btn-ops-sm btn-ops-critical" type="button" onClick={() => deleteArea(area)}>Delete</button></div></td></tr>)}</tbody></table></div> : <p className="text-muted-custom mb-0">No active emergency areas.</p>}
+        </section>
+      ) : null}
+
 
       {activeView === "board" && (
         <>
           <PriorityQueue
             areas={emergencyAreas}
             onDispatch={handleOpenDispatch}
+            onComplete={canManageAreas ? handleCompleteDispatch : undefined}
+            completingAreaId={completingAreaId}
           />
 
           <ResourceStatus />
@@ -237,6 +346,8 @@ export const EmergencyPriority = () => {
           <ResponseTable
             areas={emergencyAreas}
             onDispatch={handleOpenDispatch}
+            onComplete={canManageAreas ? handleCompleteDispatch : undefined}
+            completingAreaId={completingAreaId}
           />
 
           <ResourceStatus />
@@ -245,19 +356,30 @@ export const EmergencyPriority = () => {
 
 
       {activeView === "map" && (
-        <div className="ops-panel p-4">
-          <div className="text-center text-muted-custom">
-            GIS emergency response view is available through the Command Center
-            map.
-          </div>
-
-          <PriorityQueue
-            areas={emergencyAreas}
-            onDispatch={handleOpenDispatch}
-          />
+        <div className="ops-panel p-2 emergency-gis-map" style={{ position: "relative", height: "min(78vh, 900px)", minHeight: 520, overflow: "hidden" }}>
+          <GisCommandCenter embedded liveIncidents={gisIncidents} initialHudMode="tactical" initialMapStyle="osmdark" />
         </div>
       )}
 
+
+      <Modal
+        isOpen={Boolean(areaDraft)}
+        onClose={() => !areaSaving && setAreaDraft(null)}
+        title={areaDraft?.id ? "Edit Emergency Area" : "Add Emergency Area"}
+      >
+        {areaDraft ? <form onSubmit={saveArea}>
+          {areaError ? <div className="alert alert-danger" role="alert">{areaError}</div> : null}
+          <div className="row g-3">
+            <div className="col-12 col-md-6"><label className="form-label">Incident type</label><select className="ops-select" required value={areaDraft.type} onChange={(event) => setAreaDraft({ ...areaDraft, type: event.target.value })}><option value="landslide">Landslide</option><option value="road_blockage">Road blockage</option><option value="flash_flood">Flash flood</option><option value="slope_crack">Slope crack</option><option value="slope_movement">Slope movement</option><option value="infrastructure_damage">Infrastructure damage</option></select></div>
+            <div className="col-12 col-md-6"><label className="form-label">Severity</label><select className="ops-select" required value={areaDraft.severity} onChange={(event) => setAreaDraft({ ...areaDraft, severity: event.target.value })}><option value="low">Low</option><option value="moderate">Moderate</option><option value="high">High</option><option value="critical">Critical</option></select></div>
+            <div className="col-12"><label className="form-label">Location / address</label><input className="ops-input" maxLength={240} value={areaDraft.address} onChange={(event) => setAreaDraft({ ...areaDraft, address: event.target.value })} /></div>
+            <div className="col-12 col-md-6"><label className="form-label">Latitude</label><input className="ops-input" type="number" min="-90" max="90" step="any" required value={areaDraft.latitude} onChange={(event) => setAreaDraft({ ...areaDraft, latitude: event.target.value })} /></div>
+            <div className="col-12 col-md-6"><label className="form-label">Longitude</label><input className="ops-input" type="number" min="-180" max="180" step="any" required value={areaDraft.longitude} onChange={(event) => setAreaDraft({ ...areaDraft, longitude: event.target.value })} /></div>
+            <div className="col-12"><label className="form-label">Incident details</label><textarea className="ops-input" rows={3} required maxLength={3000} value={areaDraft.description} onChange={(event) => setAreaDraft({ ...areaDraft, description: event.target.value })} /></div>
+          </div>
+          <div className="d-flex justify-content-end gap-2 mt-3"><button type="button" className="btn-ops" onClick={() => setAreaDraft(null)} disabled={areaSaving}>Cancel</button><button type="submit" className="btn-ops btn-ops-primary" disabled={areaSaving}>{areaSaving ? "Saving…" : "Save area"}</button></div>
+        </form> : null}
+      </Modal>
 
       <Modal
         isOpen={Boolean(dispatchArea)}
@@ -338,26 +460,19 @@ export const EmergencyPriority = () => {
                 className="ops-select"
                 value={selectedUnit}
                 onChange={(event) => setSelectedUnit(event.target.value)}
+                disabled={isAuthority && (resourcesLoading || Boolean(resourcesError) || dispatchableResources.length === 0)}
               >
-                <option value="NDRF Quick Response Team Bravo (12 Bn)">
-                  NDRF Quick Response Team Bravo (12 Bn)
-                </option>
-
-                <option value="SDRF Heavy Debris Clearing Unit 3">
-                  SDRF Heavy Debris Clearing Unit 3
-                </option>
-
-                <option value="Advanced Life Support Ambulance Unit 08">
-                  ALS Ambulance Mobile Team 08
-                </option>
-
-                <option value="BRO Heavy Earthmover Taskforce">
-                  BRO Heavy Earthmover Taskforce (Swastik)
-                </option>
-
-                <option value="Field Trauma Emergency Medical Squad">
-                  Field Trauma Emergency Medical Squad
-                </option>
+                {isAuthority && resourcesLoading ? <option value="">Loading registered resources…</option> : null}
+                {isAuthority && !resourcesLoading && resourcesError ? <option value="">Resource inventory unavailable</option> : null}
+                {isAuthority && !resourcesLoading && !resourcesError && dispatchableResources.length === 0 ? <option value="">No available registered resources</option> : null}
+                {isAuthority && !resourcesLoading && !resourcesError ? dispatchableResources.map((resource) => (
+                  <option key={resource._id || resource.id || resource.name} value={resource.name}>
+                    {resource.name} · {resource.available} available
+                  </option>
+                )) : null}
+                {!isAuthority ? ADMIN_DISPATCH_UNITS.map((unit) => (
+                  <option key={unit.value} value={unit.value}>{unit.label}</option>
+                )) : null}
               </select>
             </div>
 
@@ -382,7 +497,11 @@ export const EmergencyPriority = () => {
                 Cancel
               </button>
 
-              <button type="submit" className="btn-ops btn-ops-critical">
+              <button
+                type="submit"
+                className="btn-ops btn-ops-critical"
+                disabled={!selectedUnit || (isAuthority && (resourcesLoading || Boolean(resourcesError) || !dispatchableResources.some((resource) => resource.name === selectedUnit)))}
+              >
                 <Send size={13} />
 
                 <span>Confirm Deployment</span>

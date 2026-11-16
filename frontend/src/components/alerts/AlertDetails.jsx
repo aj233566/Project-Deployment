@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Users,
   CloudRain,
@@ -12,12 +13,81 @@ import {
   Navigation,
 } from "lucide-react";
 import { useAlerts } from "../../context/useAlerts";
+import { getAlertDisplayStatus, isAlertExpired } from "../../utils/alertState";
+import { sentryApi } from "../../services/sentryApi";
 import RiskBadge from "./RiskBadge";
+
+const EARTH_RADIUS_KM = 6371;
+function distanceKm(latitudeA, longitudeA, latitudeB, longitudeB) {
+  const radians = (value) => value * Math.PI / 180;
+  const deltaLatitude = radians(latitudeB - latitudeA);
+  const deltaLongitude = radians(longitudeB - longitudeA);
+  const arc = Math.sin(deltaLatitude / 2) ** 2
+    + Math.cos(radians(latitudeA)) * Math.cos(radians(latitudeB)) * Math.sin(deltaLongitude / 2) ** 2;
+  return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(arc), Math.sqrt(1 - arc));
+}
+
 export const AlertDetails = ({ alert, onClose }) => {
-  const { acknowledgeAlert, resolveAlert, escalateAlert } = useAlerts();
+  const { acknowledgeAlert, resolveAlert, escalateAlert, updateAlertTelemetry } = useAlerts();
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [telemetrySaving, setTelemetrySaving] = useState(false);
+  const [telemetryMessage, setTelemetryMessage] = useState("");
+  const [telemetryError, setTelemetryError] = useState("");
+  const [liveData, setLiveData] = useState({ weather: null, population: null, populationComplete: true, roadReports: 0, roadDataAvailable: false });
+  const [enrichmentLoading, setEnrichmentLoading] = useState(true);
+  const [manualTelemetry, setManualTelemetry] = useState(() => {
+    const saved = alert?.operatorTelemetry || {};
+    return {
+      rainfallMm: saved.rainfallMm ?? "",
+      soilMoisture: saved.soilMoisture ?? "",
+      slopeRisk: saved.slopeRisk || "UNKNOWN",
+      roadStatus: saved.roadStatus || "UNKNOWN",
+      populationEstimate: saved.populationEstimate ?? "",
+      notes: saved.notes || "",
+    };
+  });
+  useEffect(() => {
+    if (!alert) return undefined;
+    const latitude = Number(alert.location?.latitude ?? alert.coordinates?.[1]);
+    const longitude = Number(alert.location?.longitude ?? alert.coordinates?.[0]);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return undefined;
+    let active = true;
+    const within10Km = (item) => {
+      const lat = Number(item.location?.latitude ?? item.location?.coordinates?.[1]);
+      const lon = Number(item.location?.longitude ?? item.location?.coordinates?.[0]);
+      return Number.isFinite(lat) && Number.isFinite(lon) && distanceKm(latitude, longitude, lat, lon) <= 10;
+    };
+    Promise.allSettled([
+      sentryApi.getCurrentWeather(latitude, longitude),
+      sentryApi.getNearbyHabitations(latitude, longitude, 10),
+      sentryApi.getActiveIncidents(),
+    ]).then(([weatherResult, habitationResult, incidentResult]) => {
+      if (!active) return;
+      const weather = weatherResult.status === "fulfilled" ? weatherResult.value.data : null;
+      const habitationData = habitationResult.status === "fulfilled" ? habitationResult.value : null;
+      const verifiedRoadReports = incidentResult.status === "fulfilled"
+        ? (incidentResult.value.data || []).filter((item) => item && within10Km(item)
+          && ["verified", "in_progress"].includes(String(item.status || "").toLowerCase())
+          && ["road_blockage", "road obstruction"].includes(String(item.type || "").toLowerCase().replace(/\s+/g, "_"))).length
+        : 0;
+      setLiveData({
+        weather,
+        population: habitationData?.populationEstimate ?? null,
+        populationComplete: habitationData?.populationEstimateComplete !== false,
+        roadReports: verifiedRoadReports,
+        roadDataAvailable: incidentResult.status === "fulfilled",
+      });
+    }).finally(() => {
+      if (active) setEnrichmentLoading(false);
+    });
+    return () => { active = false; };
+  }, [alert]);
   if (!alert) {
     return null;
   }
+  const hasAlertCoordinates = Number.isFinite(Number(alert.location?.latitude ?? alert.coordinates?.[1]))
+    && Number.isFinite(Number(alert.location?.longitude ?? alert.coordinates?.[0]));
   const getCurrentUser = () => {
     try {
       const storedUser = sessionStorage.getItem("user") || localStorage.getItem("user");
@@ -48,21 +118,79 @@ export const AlertDetails = ({ alert, onClose }) => {
   const longitude = alert.coordinates?.[1] ?? alert.location?.longitude;
   const riskScore = alert.riskScore ?? alert.risk?.score ?? null;
   const riskLevel = alert.riskLevel || alert.risk?.level || "UNKNOWN";
+  const alertStatus = String(alert.status || "").toLowerCase();
+  const canUpdateStatus = !isAlertExpired(alert) && alertStatus !== "resolved";
   const formatCoordinate = (value, positiveDirection, negativeDirection) =>
     `${Math.abs(Number(value)).toFixed(4)}° ${Number(value) < 0 ? negativeDirection : positiveDirection}`;
-  const affectedPopulation =
-    alert.affectedPopulation ?? alert.populationExposure;
-  const handleAcknowledge = () => {
-    acknowledgeAlert(alert.id || alert._id);
-    onClose();
+  const targetedPopulation = Array.isArray(alert.affectedHabitations)
+    ? alert.affectedHabitations.reduce((sum, habitation) => sum + (Number(habitation?.population) || 0), 0)
+    : null;
+  const targetedPopulationAvailable = Boolean(alert.targetType && Array.isArray(alert.affectedHabitations)
+    && alert.affectedHabitations.some((habitation) => habitation && typeof habitation === "object" && Object.hasOwn(habitation, "population")));
+  const providedPopulation = alert.affectedPopulation ?? alert.populationExposure;
+  const numericProvidedPopulation = providedPopulation !== null && providedPopulation !== undefined
+    && Number.isFinite(Number(providedPopulation)) ? Number(providedPopulation) : null;
+  const registeredPopulation = manualTelemetry.populationEstimate !== ""
+    ? Number(manualTelemetry.populationEstimate)
+    : targetedPopulationAvailable ? targetedPopulation
+      : liveData.population ?? numericProvidedPopulation;
+  const liveRainfall = liveData.weather?.forecast?.next72HourPrecipitation
+    ?? alert.weather?.next72HourPrecipitation;
+  const currentRainfall = liveData.weather?.rain ?? liveData.weather?.precipitation
+    ?? alert.weather?.rain ?? alert.weather?.precipitation;
+  const rainfallLabel = manualTelemetry.rainfallMm !== ""
+    ? "Rainfall · operator entry"
+    : liveRainfall != null ? "Rain forecast · next 72h" : "Current precipitation";
+  const registeredPopulationLabel = manualTelemetry.populationEstimate !== ""
+    ? "operator estimate"
+    : targetedPopulationAvailable ? "people in target"
+      : "registered people within 10 km";
+  const roadDisplay = manualTelemetry.roadStatus !== "UNKNOWN"
+    ? manualTelemetry.roadStatus
+    : liveData.roadReports > 0 ? `${liveData.roadReports} verified report${liveData.roadReports === 1 ? "" : "s"}`
+      : liveData.roadDataAvailable ? "No blockage reports" : "Unknown";
+  const handleStatusChange = async (changeStatus) => {
+    setActionError("");
+    setStatusSaving(true);
+    try {
+      await changeStatus(alert.id || alert._id);
+      onClose();
+    } catch (error) {
+      setActionError(error.response?.data?.message || error.message || "Could not update the alert status.");
+    } finally {
+      setStatusSaving(false);
+    }
   };
-  const handleResolve = () => {
-    resolveAlert(alert.id || alert._id);
-    onClose();
-  };
-  const handleEscalate = () => {
-    escalateAlert(alert.id || alert._id);
-    onClose();
+  const saveTelemetry = async (event) => {
+    event.preventDefault();
+    setTelemetrySaving(true);
+    setTelemetryError("");
+    setTelemetryMessage("");
+    try {
+      const payload = {
+        rainfallMm: manualTelemetry.rainfallMm === "" ? null : Number(manualTelemetry.rainfallMm),
+        soilMoisture: manualTelemetry.soilMoisture === "" ? null : Number(manualTelemetry.soilMoisture),
+        slopeRisk: manualTelemetry.slopeRisk,
+        roadStatus: manualTelemetry.roadStatus,
+        populationEstimate: manualTelemetry.populationEstimate === "" ? null : Number(manualTelemetry.populationEstimate),
+        notes: manualTelemetry.notes,
+      };
+      const updated = await updateAlertTelemetry(alert.id || alert._id, payload);
+      const saved = updated?.operatorTelemetry || {};
+      setManualTelemetry({
+        rainfallMm: saved.rainfallMm ?? "",
+        soilMoisture: saved.soilMoisture ?? "",
+        slopeRisk: saved.slopeRisk || "UNKNOWN",
+        roadStatus: saved.roadStatus || "UNKNOWN",
+        populationEstimate: saved.populationEstimate ?? "",
+        notes: saved.notes || "",
+      });
+      setTelemetryMessage("Operator data saved.");
+    } catch (error) {
+      setTelemetryError(error.response?.data?.message || error.message || "Unable to save operator data.");
+    } finally {
+      setTelemetrySaving(false);
+    }
   };
   const getGuidance = (guidance) => {
     if (!guidance) {
@@ -141,7 +269,7 @@ export const AlertDetails = ({ alert, onClose }) => {
               </span>
             )}
 
-            {affectedPopulation != null && (
+            {registeredPopulation != null && (
               <>
                 <span>•</span>
 
@@ -149,8 +277,7 @@ export const AlertDetails = ({ alert, onClose }) => {
                   <Users size={12} />
 
                   <span>
-                    {Number(affectedPopulation).toLocaleString()} affected
-                    population
+                    {Number(registeredPopulation).toLocaleString()} {registeredPopulationLabel}
                   </span>
                 </span>
               </>
@@ -182,6 +309,11 @@ export const AlertDetails = ({ alert, onClose }) => {
           {alert.expiresAt ? <p className="mb-0">Expires: {new Date(alert.expiresAt).toLocaleString()}</p> : null}
         </div>
       ) : null}
+
+      <div className="alert-detail-status-row">
+        <span className={`alert-status-pill status-${getAlertDisplayStatus(alert).toLowerCase()}`}>{getAlertDisplayStatus(alert)}</span>
+        {alert.expiresAt ? <span>{isAlertExpired(alert) ? "Expired" : "Expires"} {new Date(alert.expiresAt).toLocaleString()}</span> : null}
+      </div>
 
 
       {recommendedAction && (
@@ -221,15 +353,12 @@ export const AlertDetails = ({ alert, onClose }) => {
             >
               <span className="telemetry-label">
                 <CloudRain size={12} />
-                Rainfall
+                {rainfallLabel}
               </span>
 
               <span className="telemetry-val">
-                {alert.rainfall72h ??
-                  alert.weather?.rain ??
-                  alert.weather?.precipitation ??
-                  "--"}{" "}
-                mm
+                {manualTelemetry.rainfallMm !== "" ? manualTelemetry.rainfallMm
+                  : liveRainfall ?? currentRainfall ?? "--"} mm
               </span>
             </div>
           </div>
@@ -248,7 +377,8 @@ export const AlertDetails = ({ alert, onClose }) => {
               </span>
 
               <span className="telemetry-val">
-                {alert.soilMoisture ?? alert.sensor?.soilMoisture ?? "--"}%
+                {manualTelemetry.soilMoisture !== "" ? manualTelemetry.soilMoisture : "Not recorded"}
+                {manualTelemetry.soilMoisture !== "" ? "%" : ""}
               </span>
             </div>
           </div>
@@ -267,7 +397,7 @@ export const AlertDetails = ({ alert, onClose }) => {
               </span>
 
               <span className="telemetry-val">
-                {alert.slopeAngle ?? alert.terrain?.slopeRisk ?? "--"}
+                {manualTelemetry.slopeRisk !== "UNKNOWN" ? manualTelemetry.slopeRisk : "Not recorded"}
               </span>
             </div>
           </div>
@@ -286,11 +416,69 @@ export const AlertDetails = ({ alert, onClose }) => {
               </span>
 
               <span className="telemetry-val">
-                {alert.roadStatus || alert.operations?.roadBlockage || "Unknown"}
+                {roadDisplay}
               </span>
             </div>
           </div>
         </div>
+
+        <div className="alert-enrichment-note" role="status">
+          {!hasAlertCoordinates ? "Live enrichment unavailable: this alert has no coordinates." : enrichmentLoading ? "Loading live weather and nearby registered population…" : (
+            <>
+              Weather: {liveData.weather?.source || (alert.weather?.source ? `${alert.weather.source} · saved snapshot` : "unavailable")}
+              {liveData.weather?.updateTime ? ` · updated ${liveData.weather.updateTime}` : ""}
+              {registeredPopulation != null ? ` · ${registeredPopulationLabel}${!liveData.populationComplete && manualTelemetry.populationEstimate === "" ? " (partial estimate)" : ""}` : " · population unavailable"}
+            </>
+          )}
+        </div>
+        {alert.operatorTelemetry?.notes ? (
+          <div className="alert-field-notes"><strong>Field notes</strong><span>{alert.operatorTelemetry.notes}</span></div>
+        ) : null}
+
+        {isAuthority ? (
+          <details className="alert-operator-editor">
+            <summary>Add or correct field data</summary>
+            <p>Automatically fetched data stays read-only. Use this form for local measurements that are not available from connected sources.</p>
+            <form onSubmit={saveTelemetry}>
+              <div className="row g-3">
+                <div className="col-12 col-sm-6 col-lg-4">
+                  <label className="form-label" htmlFor="operator-rainfall">Rainfall, next 72h (mm)</label>
+                  <input id="operator-rainfall" className="form-control" type="number" min="0" step="any" value={manualTelemetry.rainfallMm} onChange={(event) => setManualTelemetry((current) => ({ ...current, rainfallMm: event.target.value }))} placeholder={liveRainfall == null ? "Enter if known" : `Auto: ${liveRainfall} mm`} />
+                </div>
+                <div className="col-12 col-sm-6 col-lg-4">
+                  <label className="form-label" htmlFor="operator-soil">Soil moisture (%)</label>
+                  <input id="operator-soil" className="form-control" type="number" min="0" max="100" step="any" value={manualTelemetry.soilMoisture} onChange={(event) => setManualTelemetry((current) => ({ ...current, soilMoisture: event.target.value }))} placeholder="No sensor data" />
+                </div>
+                <div className="col-12 col-sm-6 col-lg-4">
+                  <label className="form-label" htmlFor="operator-slope">Slope risk</label>
+                  <select id="operator-slope" className="form-select" value={manualTelemetry.slopeRisk} onChange={(event) => setManualTelemetry((current) => ({ ...current, slopeRisk: event.target.value }))}>
+                    <option value="UNKNOWN">Not assessed</option><option value="LOW">Low</option><option value="MODERATE">Moderate</option><option value="HIGH">High</option><option value="CRITICAL">Critical</option>
+                  </select>
+                </div>
+                <div className="col-12 col-sm-6 col-lg-4">
+                  <label className="form-label" htmlFor="operator-road">Road status</label>
+                  <select id="operator-road" className="form-select" value={manualTelemetry.roadStatus} onChange={(event) => setManualTelemetry((current) => ({ ...current, roadStatus: event.target.value }))}>
+                    <option value="UNKNOWN">Not assessed</option><option value="OPEN">Open</option><option value="PARTIAL">Partially blocked</option><option value="BLOCKED">Blocked</option>
+                  </select>
+                </div>
+                <div className="col-12 col-sm-6 col-lg-4">
+                  <label className="form-label" htmlFor="operator-population">Exposed population estimate</label>
+                  <input id="operator-population" className="form-control" type="number" min="0" step="1" value={manualTelemetry.populationEstimate} onChange={(event) => setManualTelemetry((current) => ({ ...current, populationEstimate: event.target.value }))} placeholder={liveData.population == null ? "No nearby records" : `Auto: ${liveData.population} registered`} />
+                </div>
+                <div className="col-12 col-lg-8">
+                  <label className="form-label" htmlFor="operator-notes">Field notes</label>
+                  <textarea id="operator-notes" className="form-control" rows="2" maxLength="1000" value={manualTelemetry.notes} onChange={(event) => setManualTelemetry((current) => ({ ...current, notes: event.target.value }))} placeholder="Source, observation time, or field context" />
+                </div>
+              </div>
+              {telemetryError ? <div className="alert alert-danger mt-3 mb-0" role="alert">{telemetryError}</div> : null}
+              {telemetryMessage ? <div className="alert alert-success mt-3 mb-0" role="status">{telemetryMessage}</div> : null}
+              <div className="alert-operator-actions">
+                {alert.operatorTelemetry?.updatedAt ? <span>Last field update: {new Date(alert.operatorTelemetry.updatedAt).toLocaleString()}</span> : <span>Manual fields are saved with this alert.</span>}
+                <button type="submit" className="btn btn-primary" disabled={telemetrySaving}>{telemetrySaving ? "Saving…" : "Save field data"}</button>
+              </div>
+            </form>
+          </details>
+        ) : null}
 
         {contributingFactors.length > 0 && (
           <div className="contributing-factors-list">
@@ -559,25 +747,28 @@ export const AlertDetails = ({ alert, onClose }) => {
           borderTop: "1px solid var(--border)",
         }}
       >
-        {(alert.status === "Active" || alert.status === "ACTIVE") && (
-          <button className="btn-ops" onClick={handleAcknowledge}>
+        {actionError ? <div className="alert alert-danger w-100 mb-0" role="alert">{actionError}</div> : null}
+        {canUpdateStatus && alertStatus === "active" && (
+          <button type="button" className="btn-ops" disabled={statusSaving} onClick={() => void handleStatusChange(acknowledgeAlert)}>
             <CheckCircle size={14} />
 
             <span>Acknowledge Alert</span>
           </button>
         )}
 
-        {String(riskLevel).toUpperCase() !== "CRITICAL" && (
-          <button className="btn-ops btn-ops-critical" onClick={handleEscalate}>
+        {canUpdateStatus && String(riskLevel).toUpperCase() !== "CRITICAL" && (
+          <button type="button" className="btn-ops btn-ops-critical" disabled={statusSaving} onClick={() => void handleStatusChange(escalateAlert)}>
             <ShieldAlert size={14} />
 
             <span>Escalate Priority</span>
           </button>
         )}
 
-        <button className="btn-ops btn-ops-primary" onClick={handleResolve}>
-          <span>Resolve Alert</span>
-        </button>
+        {canUpdateStatus ? (
+          <button type="button" className="btn-ops btn-ops-primary" disabled={statusSaving} onClick={() => void handleStatusChange(resolveAlert)}>
+            <span>{statusSaving ? "Saving…" : "Resolve Alert"}</span>
+          </button>
+        ) : null}
       </div>
     </div>
   );

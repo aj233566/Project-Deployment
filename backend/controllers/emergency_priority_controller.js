@@ -277,6 +277,8 @@ const formatEmergencyArea = (
         responseStatus,
         assignedTeam:
             dispatch?.unitName || "",
+        dispatchId: dispatch?._id || null,
+        dispatchStatus: dispatch?.status || null,
         assignedUnits:
             dispatch ? 1 : 0,
         incidentStatus:
@@ -505,6 +507,146 @@ const getPrioritisedAreaById =
             });
         }
     };
+const ACTIVE_DISPATCH_STATUSES = ["dispatched", "en_route", "arrived"];
+const findResourceForDispatch = async (unitName) => {
+    const escapedName = unitName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return Resource.findOne({ name: { $regex: `^${escapedName}$`, $options: "i" } });
+};
+const reserveResourceUnit = async (resourceId) => {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+        const resource = await Resource.findById(resourceId).lean();
+        if (!resource || !(resource.available > 0)) return false;
+        const filter = { _id: resource._id, available: resource.available };
+        let update;
+        const deployed = Number.isFinite(resource.deployed) ? resource.deployed : 0;
+        if (Number.isFinite(resource.deployed)) {
+            filter.deployed = resource.deployed;
+            update = { $inc: { available: -1, deployed: 1 } };
+        } else {
+            filter.$or = [{ deployed: null }, { deployed: { $exists: false } }];
+            update = { $inc: { available: -1 }, $set: { deployed: 1 } };
+        }
+        const updated = await Resource.findOneAndUpdate(filter, update, { returnDocument: "after" });
+        if (updated) {
+            const nextAvailable = resource.available - 1;
+            const nextDeployed = deployed + 1;
+            await Resource.updateOne(
+                { _id: resource._id, available: nextAvailable, deployed: nextDeployed },
+                { $set: { status: calculateResourceStatus(resource.total, nextAvailable, nextDeployed) } }
+            );
+            return true;
+        }
+    }
+    return false;
+};
+const releaseResourceUnit = async (dispatch) => {
+    const resource = dispatch.resourceRef
+        ? await Resource.findById(dispatch.resourceRef)
+        : await findResourceForDispatch(dispatch.unitName);
+    if (!resource) return;
+    const total = Number(resource.total);
+    const reserved = Number.isFinite(resource.reserved) ? resource.reserved : 0;
+    const deployed = Number.isFinite(resource.deployed) ? resource.deployed : null;
+    const available = Math.min(total - reserved, Number(resource.available) + 1);
+    const remainingDeployed = deployed === null ? 0 : Math.max(0, deployed - 1);
+    await Resource.updateOne({ _id: resource._id }, {
+        $set: {
+            available,
+            deployed: remainingDeployed,
+            status: calculateResourceStatus(total, available, remainingDeployed)
+        }
+    });
+};
+const completeDispatch = async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ success: false, message: "Invalid incident ID." });
+        }
+        const activeDispatch = await EmergencyDispatchModel.findOne({
+            incidentId: req.params.id,
+            status: { $in: ACTIVE_DISPATCH_STATUSES }
+        }).sort({ createdAt: -1 }).lean();
+        if (!activeDispatch) {
+            return res.status(404).json({ success: false, message: "No active resource task was found for this incident." });
+        }
+        const completed = await EmergencyDispatchModel.findOneAndUpdate(
+            { _id: activeDispatch._id, status: { $in: ACTIVE_DISPATCH_STATUSES } },
+            { $set: { status: "completed" } },
+            { returnDocument: "after" }
+        );
+        if (!completed) {
+            return res.status(409).json({ success: false, message: "This resource task was already updated." });
+        }
+        try {
+            await releaseResourceUnit(completed);
+        } catch (error) {
+            await EmergencyDispatchModel.updateOne(
+                { _id: completed._id, status: "completed" },
+                { $set: { status: activeDispatch.status } }
+            );
+            throw error;
+        }
+        await Incident.updateOne({ _id: req.params.id }, { $set: { status: "resolved" } });
+        return res.status(200).json({
+            success: true,
+            message: "Task marked complete and the resource returned to available inventory.",
+            data: { dispatchId: completed._id, status: completed.status }
+        });
+    } catch (error) {
+        console.error("Emergency dispatch completion error:", error);
+        return res.status(500).json({ success: false, message: "Failed to complete emergency task." });
+    }
+};
+const createManagedEmergencyArea = async (req, res) => {
+    try {
+        const { type, severity, description, latitude, longitude, address = "" } = req.body;
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+        if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
+            return res.status(400).json({ success: false, message: "Enter valid latitude and longitude." });
+        }
+        const incident = await Incident.create({
+            type, severity, description: String(description || "").trim(),
+            location: { latitude: lat, longitude: lng, address: String(address).trim() },
+            status: "verified", reportedBy: String(req.user.userId)
+        });
+        return res.status(201).json({ success: true, data: incident });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error.message || "Unable to create emergency area." });
+    }
+};
+const updateManagedEmergencyArea = async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid incident ID." });
+        const { type, severity, description, latitude, longitude, address } = req.body;
+        const lat = Number(latitude);
+        const lng = Number(longitude);
+        if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
+            return res.status(400).json({ success: false, message: "Enter valid latitude and longitude." });
+        }
+        const incident = await Incident.findOneAndUpdate(
+            { _id: req.params.id, status: { $ne: "resolved" } },
+            { $set: { type, severity, description: String(description || "").trim(), location: { latitude: lat, longitude: lng, address: String(address || "").trim() } } },
+            { new: true, runValidators: true }
+        );
+        if (!incident) return res.status(404).json({ success: false, message: "Active emergency area not found." });
+        return res.json({ success: true, data: incident });
+    } catch (error) {
+        return res.status(400).json({ success: false, message: error.message || "Unable to update emergency area." });
+    }
+};
+const deleteManagedEmergencyArea = async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ success: false, message: "Invalid incident ID." });
+        const activeDispatch = await EmergencyDispatchModel.exists({ incidentId: req.params.id, status: { $in: ACTIVE_DISPATCH_STATUSES } });
+        if (activeDispatch) return res.status(409).json({ success: false, message: "Mark the assigned task done before deleting this emergency area." });
+        const deleted = await Incident.findOneAndDelete({ _id: req.params.id, status: { $ne: "resolved" } });
+        if (!deleted) return res.status(404).json({ success: false, message: "Active emergency area not found." });
+        return res.json({ success: true, message: "Emergency area deleted." });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Unable to delete emergency area." });
+    }
+};
 const dispatchTeam = async (
     req,
     res
@@ -567,6 +709,9 @@ const dispatchTeam = async (
                 data: activeDispatch
             });
         }
+        const automateInventory = req.user?.role === "authority";
+        let resource = null;
+        let resourceReserved = false;
         let dispatch;
         try {
             dispatch = await EmergencyDispatchModel.create({
@@ -574,6 +719,7 @@ const dispatchTeam = async (
                     incident._id,
                 unitName:
                     unitName.trim(),
+                resourceRef: null,
                 status:
                     "dispatched",
                 notes:
@@ -593,45 +739,60 @@ const dispatchTeam = async (
                 data: existingDispatch
             });
         }
+        try {
+            if (automateInventory) {
+                resource = await findResourceForDispatch(unitName.trim());
+                if (resource) {
+                    resourceReserved = await reserveResourceUnit(resource._id);
+                    if (!resourceReserved) {
+                        await EmergencyDispatchModel.deleteOne({ _id: dispatch._id, status: "dispatched" });
+                        return res.status(409).json({
+                            success: false,
+                            message: "This resource has no available units to assign."
+                        });
+                    }
+                    await EmergencyDispatchModel.updateOne(
+                        { _id: dispatch._id, status: "dispatched" },
+                        { $set: { resourceRef: resource._id } }
+                    );
+                }
+            }
+        } catch (error) {
+            await EmergencyDispatchModel.deleteOne({ _id: dispatch._id, status: "dispatched" });
+            if (resourceReserved && resource) {
+                await releaseResourceUnit({ resourceRef: resource._id, unitName: unitName.trim() });
+            }
+            throw error;
+        }
         incident.status =
             "in_progress";
-        await incident.save();
-        try {
-            const escapedUnitName =
-                unitName
-                    .trim()
-                    .replace(
-                        /[.*+?^${}()|[\]\\]/g,
-                        "\\$&"
+        if (automateInventory) {
+          try {
+            await incident.save();
+          } catch (error) {
+            await EmergencyDispatchModel.deleteOne({ _id: dispatch._id, status: "dispatched" });
+            if (resourceReserved && resource) await releaseResourceUnit(dispatch);
+            throw error;
+          }
+        } else {
+            await incident.save();
+        }
+        if (!automateInventory) {
+            try {
+                const legacyResource = await findResourceForDispatch(unitName.trim());
+                if (legacyResource && legacyResource.available > 0) {
+                    legacyResource.available -= 1;
+                    if (Number.isFinite(legacyResource.deployed)) legacyResource.deployed += 1;
+                    legacyResource.status = calculateResourceStatus(
+                        legacyResource.total,
+                        legacyResource.available,
+                        legacyResource.deployed
                     );
-            const resource =
-                await Resource.findOne({
-                    name: {
-                        $regex:
-                            `^${escapedUnitName}$`,
-                        $options: "i"
-                    }
-                });
-            if (
-                resource &&
-                resource.available > 0
-            ) {
-                resource.available -= 1;
-                if (Number.isFinite(resource.deployed)) {
-                    resource.deployed += 1;
+                    await legacyResource.save();
                 }
-                resource.status = calculateResourceStatus(
-                    resource.total,
-                    resource.available,
-                    resource.deployed
-                );
-                await resource.save();
+            } catch (resourceError) {
+                console.warn("Resource update skipped:", resourceError.message);
             }
-        } catch (resourceError) {
-            console.warn(
-                "Resource update skipped:",
-                resourceError.message
-            );
         }
         res.status(201).json({
             success: true,
@@ -673,5 +834,9 @@ module.exports = {
     getPrioritisedAreas,
     getPrioritisedAreaById,
     dispatchTeam,
+    completeDispatch,
+    createManagedEmergencyArea,
+    updateManagedEmergencyArea,
+    deleteManagedEmergencyArea,
     formatEmergencyArea
 };

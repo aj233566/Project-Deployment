@@ -87,6 +87,14 @@ export const alertApi = {
       );
     return response.data;
   },
+  updateAlertTelemetry: async (id, telemetry) => {
+    const response = await api.patch(`/alerts/${id}/telemetry`, telemetry);
+    return response.data;
+  },
+  deleteAlert: async (id) => {
+    const response = await api.delete(`/alerts/${id}`);
+    return response.data;
+  },
 };
 export const notificationApi = {
   getNotifications: async () => {
@@ -120,6 +128,13 @@ export const emergencyApi = {
     );
     return response.data;
   },
+  completeDispatch: async (areaId) => {
+    const response = await api.patch(`/emergency-priority/${areaId}/dispatch/complete`);
+    return response.data;
+  },
+  createArea: async (payload) => (await api.post("/emergency-priority/managed", payload)).data,
+  updateArea: async (areaId, payload) => (await api.patch(`/emergency-priority/${areaId}/managed`, payload)).data,
+  deleteArea: async (areaId) => (await api.delete(`/emergency-priority/${areaId}/managed`)).data,
 };
 export const resourcesApi = {
   getResources: async () => {
@@ -141,6 +156,10 @@ export const resourcesApi = {
       payload
     );
     return response.data;
-  }
+  },
+  deleteResource: async (id) => {
+    const response = await api.delete(`/resources/${id}`);
+    return response.data;
+  },
 };
 export default api;

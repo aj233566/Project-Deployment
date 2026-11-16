@@ -8,13 +8,15 @@ function WeatherCard({
   risk = "UNKNOWN",
 }) {
   const riskLevel = String(risk || "UNKNOWN").toUpperCase();
-  const riskClass = riskLevel === "CRITICAL" || riskLevel === "HIGH"
-    ? "bg-danger"
-    : riskLevel === "MODERATE"
-      ? "bg-warning text-dark"
-      : riskLevel === "LOW"
-        ? "bg-success"
-        : "bg-secondary";
+  const riskClass = riskLevel === "CRITICAL"
+    ? "risk-indicator--critical"
+    : riskLevel === "HIGH"
+      ? "risk-indicator--high"
+      : riskLevel === "MODERATE"
+        ? "risk-indicator--moderate"
+        : riskLevel === "LOW"
+          ? "risk-indicator--low"
+          : "risk-indicator--unknown";
   const formatMeasurement = (value, unit) => Number.isFinite(value)
     ? `${value}${unit}`
     : "Unavailable";

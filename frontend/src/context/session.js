@@ -60,8 +60,7 @@ export function isAuthRoute(pathname) {
     ? pathname
     : (typeof window !== 'undefined' ? window.location.pathname : '');
   return path === '/login'
-    || path === '/login/citizen'
-    || path === '/login/authority'
+    || path.startsWith('/login/')
     || path === '/signup';
 }
 export function shouldRedirectToLogin(status, pathname) {

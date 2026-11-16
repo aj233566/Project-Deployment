@@ -3,6 +3,8 @@ const {
   getAlerts,
   getAlertById,
   updateAlertStatus,
+  updateAlertTelemetry,
+  deleteAlert,
 } = require("../controllers/alert_controller");
 const { protect, authorizeAuthorityOrAdmin } = require("../middlewares/auth_middleware");
 const { createTargetedAlert } = require("../controllers/targeted_alert_controller");
@@ -11,5 +13,7 @@ router.use(protect);
 router.post("/targeted", authorizeAuthorityOrAdmin, createTargetedAlert);
 router.get("/", getAlerts);
 router.get("/:id", getAlertById);
+router.patch("/:id/telemetry", authorizeAuthorityOrAdmin, updateAlertTelemetry);
 router.patch("/:id/status", authorizeAuthorityOrAdmin, updateAlertStatus);
+router.delete("/:id", authorizeAuthorityOrAdmin, deleteAlert);
 module.exports = router;

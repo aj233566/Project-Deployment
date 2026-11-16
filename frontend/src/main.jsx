@@ -13,8 +13,18 @@ import "./css/citizen-text.css";
 import "./css/authority-text.css";
 import "./css/auth-text.css";
 import App from "./App";
+import { initializeTheme } from "./utils/theme.js";
+initializeTheme();
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <App />
   </StrictMode>,
 );
+
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((error) => {
+      console.error("Offline map tile caching could not be enabled:", error);
+    });
+  }, { once: true });
+}

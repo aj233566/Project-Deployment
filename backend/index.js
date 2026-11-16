@@ -26,6 +26,9 @@ const affectedAreaRoutes = require("./routes/affected_area_routes");
 const presenceRoutes = require("./routes/presence_routes");
 const nearbyRoutes = require("./routes/nearby_routes");
 const relocationPriorityRoutes = require("./routes/relocation_priority_routes");
+const meshRoutes = require("./routes/mesh_routes");
+const liveRoutes = require("./routes/live_routes");
+const liveHub = require("./services/live_hub");
 const {
     analyzeRisk
 } = require("./risk-intelligence/services/riskEngine");
@@ -169,6 +172,10 @@ app.use("/api/affected-areas", affectedAreaRoutes);
 app.use("/api/presence", presenceRoutes);
 app.use("/api/nearby", nearbyRoutes);
 app.use("/api/relocation-priority", relocationPriorityRoutes);
+app.use("/api/mesh", meshRoutes);
+app.use("/api/live", liveRoutes);
+liveHub.attach(require("./models/notification"), "notification");
+liveHub.attach(require("./models/mesh_message"), "citizen-report");
 app.get("/api/weather/current", async (req, res, next) => {
     try {
         const validation = validateCoordinates(req.query.latitude, req.query.longitude);
@@ -332,7 +339,8 @@ app.post("/api/risk/analyze", async (req, res, next) => {
             generatedAlert =
                 await processRiskAlert({
                     location: input.location,
-                    multiHazard
+                    multiHazard,
+                    weather
                 });
         } catch (alertError) {
             console.error(

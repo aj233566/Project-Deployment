@@ -1,7 +1,200 @@
 import { useEffect, useMemo, useState } from "react";
-import { Truck, Search, Phone, Building, ShieldCheck } from "lucide-react";
+import { Truck, Search } from "lucide-react";
 import { resourcesApi } from "../services/api";
+import { getStoredUser } from "../context/session";
 import "../css/resources.css";
+function canCreateResources() {
+  const user = getStoredUser();
+  return user?.role === "authority" && user?.authorityStatus === "verified";
+}
+const EMPTY_RESOURCE_FORM = {
+  resourceId: "",
+  name: "",
+  category: "",
+  description: "",
+  total: "",
+  deployed: "0",
+  reserved: "0",
+  location: "",
+};
+const matchesCategory = (rawCategory, filter) => {
+  const category = String(rawCategory || "").trim().toUpperCase();
+  if (filter === "ALL") return true;
+  if (filter === "NDRF") return category.includes("NDRF");
+  if (filter === "SDRF") return category.includes("SDRF");
+  if (filter === "MEDICAL TRANSPORT") return /AMBULANCE|MEDICAL|TRANSPORT/.test(category);
+  if (filter === "ROAD CLEARING") return /ROAD|CLEAR|EARTH|BRO/.test(category);
+  return category === filter;
+};
+function ResourceCreateForm({ onCreated }) {
+  const [values, setValues] = useState(EMPTY_RESOURCE_FORM);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const update = (key, value) => setValues((current) => ({ ...current, [key]: value }));
+  const calculatedAvailable = Number(values.total || 0) - Number(values.deployed || 0) - Number(values.reserved || 0);
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    setSaving(true);
+    try {
+      const quantity = (key, label, required = false) => {
+        const raw = values[key].trim();
+        if (!raw && !required) return undefined;
+        const number = Number(raw);
+        if (!Number.isSafeInteger(number) || number < 0) {
+          throw new Error(`${label} must be a non-negative whole number.`);
+        }
+        return number;
+      };
+      const total = quantity("total", "Total units", true);
+      const deployed = quantity("deployed", "Deployed units");
+      const reserved = quantity("reserved", "Reserved units");
+      const assigned = deployed ?? 0;
+      const held = reserved ?? 0;
+      const available = total - assigned - held;
+      if (!values.name.trim()) throw new Error("Resource name is required.");
+      if (!values.category.trim()) throw new Error("Category is required.");
+      if (available < 0) throw new Error("Total units must cover deployed and reserved units.");
+      const payload = {
+        ...(values.resourceId.trim() ? { resourceId: values.resourceId.trim() } : {}),
+        name: values.name.trim(),
+        category: values.category.trim(),
+        description: values.description.trim(),
+        total,
+        available,
+        deployed: assigned,
+        reserved: held,
+        location: values.location.trim(),
+      };
+      await resourcesApi.createResource(payload);
+      setValues(EMPTY_RESOURCE_FORM);
+      setMessage("Resource saved to the registered inventory.");
+      await onCreated();
+    } catch (submitError) {
+      setError(submitError.response?.data?.message || submitError.message || "Unable to save this resource.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <form className="resource-create-form" onSubmit={submit}>
+      {error ? <div className="alert alert-danger" role="alert">{error}</div> : null}
+      {message ? <div className="alert alert-success" role="status">{message}</div> : null}
+      <div className="row g-3">
+        <ResourceTextField id="resource-id" label="Resource ID (optional)" value={values.resourceId} onChange={(value) => update("resourceId", value)} />
+        <ResourceTextField id="resource-name" label="Resource name" value={values.name} onChange={(value) => update("name", value)} required />
+        <ResourceTextField id="resource-category" label="Category" value={values.category} onChange={(value) => update("category", value)} required />
+        <ResourceTextField id="resource-location" label="Location / station" value={values.location} onChange={(value) => update("location", value)} />
+        <ResourceNumberField id="resource-total" label="Total units" value={values.total} onChange={(value) => update("total", value)} required />
+        <ResourceNumberField id="resource-deployed" label="Already assigned / deployed units" value={values.deployed} onChange={(value) => update("deployed", value)} />
+        <ResourceNumberField id="resource-reserved" label="Reserved units" value={values.reserved} onChange={(value) => update("reserved", value)} />
+        <div className="col-12 col-md-6">
+          <label className="form-label" htmlFor="resource-available">Available units (calculated)</label>
+          <input id="resource-available" className="form-control" type="number" value={values.total.trim() && Number.isSafeInteger(calculatedAvailable) && calculatedAvailable >= 0 ? calculatedAvailable : ""} readOnly disabled />
+          <div className="form-text">Available = total − deployed − reserved.</div>
+        </div>
+        <div className="col-12">
+          <label className="form-label" htmlFor="resource-description">Description (optional)</label>
+          <textarea id="resource-description" className="form-control" rows="2" value={values.description} onChange={(event) => update("description", event.target.value)} />
+        </div>
+      </div>
+      <button className="btn btn-success mt-3" type="submit" disabled={saving}>
+        {saving ? "Saving…" : "Save resource"}
+      </button>
+    </form>
+  );
+}
+function ResourceTextField({ id, label, value, onChange, required = false }) {
+  return (
+    <div className="col-12 col-md-6">
+      <label className="form-label" htmlFor={id}>{label}</label>
+      <input id={id} className="form-control" type="text" value={value} onChange={(event) => onChange(event.target.value)} required={required} maxLength={160} />
+    </div>
+  );
+}
+function ResourceNumberField({ id, label, value, onChange, required = false }) {
+  return (
+    <div className="col-12 col-md-6">
+      <label className="form-label" htmlFor={id}>{label}</label>
+      <input id={id} className="form-control" type="number" min="0" step="1" value={value} onChange={(event) => onChange(event.target.value)} required={required} />
+    </div>
+  );
+}
+function ResourceEditForm({ resource, onCancel, onSaved }) {
+  const [values, setValues] = useState({
+    name: resource.name || "",
+    category: resource.category || "",
+    description: resource.description || "",
+    total: String(resource.total ?? resource.totalUnits ?? ""),
+    deployed: String(resource.deployed ?? resource.deployedUnits ?? 0),
+    reserved: String(resource.reserved ?? 0),
+    location: resource.location || "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const update = (key, value) => setValues((current) => ({ ...current, [key]: value }));
+  const total = Number(values.total);
+  const deployed = Number(values.deployed);
+  const reserved = Number(values.reserved);
+  const available = total - deployed - reserved;
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+    try {
+      if (!values.name.trim() || !values.category.trim()) throw new Error("Resource name and category are required.");
+      if (![total, deployed, reserved].every((value) => Number.isSafeInteger(value) && value >= 0)) {
+        throw new Error("Unit counts must be non-negative whole numbers.");
+      }
+      if (available < 0) throw new Error("Total units must cover deployed and reserved units.");
+      await resourcesApi.updateResource(resource._id || resource.id, {
+        name: values.name.trim(),
+        category: values.category.trim(),
+        description: values.description.trim(),
+        total,
+        reserved,
+        location: values.location.trim(),
+      });
+      await onSaved();
+    } catch (saveError) {
+      setError(saveError.response?.data?.message || saveError.message || "Unable to update this resource.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <form className="resource-create-form" onSubmit={submit}>
+      <h3 className="h5 mb-3">Edit {resource.name || "resource"}</h3>
+      <p className="small text-muted">Dispatching a unit increases deployed and reduces available. Marking its task done returns it to available units.</p>
+      {error ? <div className="alert alert-danger" role="alert">{error}</div> : null}
+      <div className="row g-3">
+        <ResourceTextField id="edit-resource-name" label="Resource name" value={values.name} onChange={(value) => update("name", value)} required />
+        <ResourceTextField id="edit-resource-category" label="Category" value={values.category} onChange={(value) => update("category", value)} required />
+        <ResourceTextField id="edit-resource-location" label="Location / station" value={values.location} onChange={(value) => update("location", value)} />
+        <ResourceNumberField id="edit-resource-total" label="Total units" value={values.total} onChange={(value) => update("total", value)} required />
+        <div className="col-12 col-md-6">
+          <label className="form-label" htmlFor="edit-resource-deployed">Assigned / deployed units</label>
+          <input id="edit-resource-deployed" className="form-control" type="number" value={values.deployed} readOnly disabled />
+        </div>
+        <ResourceNumberField id="edit-resource-reserved" label="Reserved units" value={values.reserved} onChange={(value) => update("reserved", value)} />
+        <div className="col-12 col-md-6">
+          <label className="form-label" htmlFor="edit-resource-available">Available units (calculated)</label>
+          <input id="edit-resource-available" className="form-control" type="number" value={Number.isSafeInteger(available) && available >= 0 ? available : ""} readOnly disabled />
+        </div>
+        <div className="col-12">
+          <label className="form-label" htmlFor="edit-resource-description">Description</label>
+          <textarea id="edit-resource-description" className="form-control" rows="2" value={values.description} onChange={(event) => update("description", event.target.value)} />
+        </div>
+      </div>
+      <div className="d-flex gap-2 mt-3">
+        <button className="btn btn-success" type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
+        <button className="btn btn-outline-secondary" type="button" onClick={onCancel} disabled={saving}>Cancel</button>
+      </div>
+    </form>
+  );
+}
 const ResourceManagement = () => {
   const [resources, setResources] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -9,6 +202,12 @@ const ResourceManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingResource, setEditingResource] = useState(null);
+  const [deletingResourceId, setDeletingResourceId] = useState(null);
+  const [actionNotice, setActionNotice] = useState("");
+  const [actionError, setActionError] = useState("");
+  const canCreate = canCreateResources();
   useEffect(() => {
     let mounted = true;
     resourcesApi.getResources()
@@ -49,109 +248,32 @@ const ResourceManagement = () => {
         type.includes(search) ||
         category.toLowerCase().includes(search);
       if (!matchSearch) return false;
-      if (categoryFilter === "ALL") {
-        return true;
-      }
-      return category === categoryFilter;
+      return matchesCategory(category, categoryFilter);
     });
   }, [resources, searchTerm, categoryFilter]);
-  const resourceSummary = (matches) => {
-    if (!matches.length) return null;
-    const values = matches.map((resource) => ({
-      total: resource.totalUnits ?? resource.total,
-      available: resource.availableUnits ?? resource.available,
-    }));
-    if (values.some((item) => !Number.isFinite(item.total) || !Number.isFinite(item.available))) {
-      return { total: null, available: null };
-    }
-    return values.reduce((totals, item) => ({
-      total: totals.total + item.total,
-      available: totals.available + item.available,
-    }), { total: 0, available: 0 });
+  const categoryCount = (filter) => resources.filter((resource) => matchesCategory(resource.category, filter)).length;
+  const reloadResources = () => {
+    setLoading(true);
+    setReloadToken((value) => value + 1);
   };
-  const rescueSummary = resourceSummary(resources.filter((resource) =>
-    ["NDRF", "SDRF"].includes(String(resource.category || "").trim().toUpperCase())
-  ));
-  const ambulanceSummary = resourceSummary(resources.filter((resource) =>
-    ["MEDICAL TRANSPORT", "AMBULANCE"].includes(String(resource.category || "").trim().toUpperCase())
-  ));
-  const earthmoverSummary = resourceSummary(resources.filter((resource) =>
-    ["ROAD CLEARING", "EARTHMOVER"].includes(String(resource.category || "").trim().toUpperCase())
-  ));
-  const medicalTeamSummary = resourceSummary(resources.filter((resource) =>
-    ["FIELD MEDICAL", "MEDICAL SQUAD", "MEDICAL TEAM"].includes(String(resource.category || "").trim().toUpperCase())
-  ));
-  const displayTotal = (summary) => loading || error || summary?.total === null ? "Unavailable" : summary ? summary.total.toLocaleString() : "Not recorded";
-  const displayAvailable = (summary) => loading || error || summary?.available === null ? "Availability unavailable" : summary ? `Available: ${summary.available.toLocaleString()}` : "Availability not recorded";
+  const deleteResource = async (resource) => {
+    const name = resource?.name || "this resource";
+    if (!window.confirm(`Delete ${name} from the resource inventory?`)) return;
+    setDeletingResourceId(resource._id || resource.id);
+    setActionError("");
+    setActionNotice("");
+    try {
+      await resourcesApi.deleteResource(resource._id || resource.id);
+      setActionNotice(`${name} was deleted.`);
+      reloadResources();
+    } catch (deleteError) {
+      setActionError(deleteError.response?.data?.message || deleteError.message || "Unable to delete this resource.");
+    } finally {
+      setDeletingResourceId(null);
+    }
+  };
   return (
     <div className="container-fluid p-0 resources-management-container">
-
-      <div className="row g-3 mb-4">
-        <div className="col-12 col-sm-6 col-xl-3">
-          <div
-            className="kpi-metric-card h-100"
-            style={{ borderLeft: "4px solid var(--info)" }}
-          >
-            <div className="kpi-metric-header">
-              <span>Rescue Units</span>
-              <ShieldCheck size={16} className="metric-icon info" />
-            </div>
-
-            <div className="kpi-metric-value">{displayTotal(rescueSummary)}</div>
-
-            <div className="kpi-metric-sub">{displayAvailable(rescueSummary)} · NDRF/SDRF records</div>
-          </div>
-        </div>
-
-        <div className="col-12 col-sm-6 col-xl-3">
-          <div
-            className="kpi-metric-card h-100"
-            style={{ borderLeft: "4px solid var(--safe)" }}
-          >
-            <div className="kpi-metric-header">
-              <span>ALS Ambulances</span>
-              <Truck size={16} className="metric-icon safe" />
-            </div>
-
-            <div className="kpi-metric-value">{displayTotal(ambulanceSummary)}</div>
-
-            <div className="kpi-metric-sub">{displayAvailable(ambulanceSummary)}</div>
-          </div>
-        </div>
-
-        <div className="col-12 col-sm-6 col-xl-3">
-          <div
-            className="kpi-metric-card h-100"
-            style={{ borderLeft: "4px solid var(--warning)" }}
-          >
-            <div className="kpi-metric-header">
-              <span>Heavy Earthmovers</span>
-              <Building size={16} className="metric-icon warning" />
-            </div>
-
-            <div className="kpi-metric-value">{displayTotal(earthmoverSummary)}</div>
-
-            <div className="kpi-metric-sub">{displayAvailable(earthmoverSummary)}</div>
-          </div>
-        </div>
-
-        <div className="col-12 col-sm-6 col-xl-3">
-          <div
-            className="kpi-metric-card h-100"
-            style={{ borderLeft: "4px solid var(--critical)" }}
-          >
-            <div className="kpi-metric-header">
-              <span>Field Medical Squads</span>
-              <Phone size={16} className="metric-icon critical" />
-            </div>
-
-            <div className="kpi-metric-value">{displayTotal(medicalTeamSummary)}</div>
-
-            <div className="kpi-metric-sub">{displayAvailable(medicalTeamSummary)}</div>
-          </div>
-        </div>
-      </div>
-
 
       <div className="ops-panel">
         <div className="ops-panel-header">
@@ -164,7 +286,23 @@ const ResourceManagement = () => {
           <span className="badge-ops info">
             {loading || error ? "Inventory unavailable" : `${resources.length} Resource Records`}
           </span>
+          {canCreate ? (
+            <button className="btn btn-success btn-sm ms-auto" type="button" aria-expanded={createOpen} aria-controls="resource-create-form-panel" onClick={() => setCreateOpen((open) => !open)}>
+              {createOpen ? "Close form" : "Add resource"}
+            </button>
+          ) : null}
         </div>
+
+        {canCreate && createOpen ? (
+          <section id="resource-create-form-panel" className="p-3 border-bottom" aria-label="Add resource to inventory">
+            <ResourceCreateForm onCreated={async () => {
+              setCreateOpen(false);
+              setActionNotice("Resource saved to the registered inventory.");
+              setLoading(true);
+              setReloadToken((value) => value + 1);
+            }} />
+          </section>
+        ) : null}
 
         {error ? (
           <div className="alert alert-danger m-3" role="alert">
@@ -183,6 +321,22 @@ const ResourceManagement = () => {
           </div>
         ) : null}
 
+        {actionError ? <div className="alert alert-danger m-3" role="alert">{actionError}</div> : null}
+        {actionNotice ? <div className="alert alert-success m-3" role="status">{actionNotice}</div> : null}
+        {canCreate && editingResource ? (
+          <section className="p-3 border-bottom" aria-label="Edit resource">
+            <ResourceEditForm
+              resource={editingResource}
+              onCancel={() => setEditingResource(null)}
+              onSaved={async () => {
+                setEditingResource(null);
+                setActionNotice("Resource changes saved. Available units were recalculated.");
+                reloadResources();
+              }}
+            />
+          </section>
+        ) : null}
+
 
         <div className="alert-filter-bar">
           <div className="filter-left-group">
@@ -193,7 +347,7 @@ const ResourceManagement = () => {
               }`}
               onClick={() => setCategoryFilter("ALL")}
             >
-              All Assets ({resources.length})
+              All Assets ({categoryCount("ALL")})
             </button>
 
             <button
@@ -203,7 +357,7 @@ const ResourceManagement = () => {
               }`}
               onClick={() => setCategoryFilter("NDRF")}
             >
-              NDRF Units
+              NDRF Units ({categoryCount("NDRF")})
             </button>
 
             <button
@@ -213,7 +367,7 @@ const ResourceManagement = () => {
               }`}
               onClick={() => setCategoryFilter("SDRF")}
             >
-              SDRF Units
+              SDRF Units ({categoryCount("SDRF")})
             </button>
 
             <button
@@ -223,7 +377,7 @@ const ResourceManagement = () => {
               }`}
               onClick={() => setCategoryFilter("MEDICAL TRANSPORT")}
             >
-              Ambulances
+              Ambulances ({categoryCount("MEDICAL TRANSPORT")})
             </button>
 
             <button
@@ -233,7 +387,7 @@ const ResourceManagement = () => {
               }`}
               onClick={() => setCategoryFilter("ROAD CLEARING")}
             >
-              Earthmovers &amp; BRO
+              Earthmovers &amp; BRO ({categoryCount("ROAD CLEARING")})
             </button>
           </div>
 
@@ -271,6 +425,7 @@ const ResourceManagement = () => {
                   <th>Location / Station</th>
                   <th>Contact Point</th>
                   <th>Status</th>
+                  {canCreate ? <th>Actions</th> : null}
                 </tr>
               </thead>
 
@@ -289,8 +444,6 @@ const ResourceManagement = () => {
 
                         <div className="resource-id">{resourceId}</div>
                       </td>
-
-
                       <td>
                         <span className="badge-ops neutral">
                           {res?.category || "General"}
@@ -340,6 +493,18 @@ const ResourceManagement = () => {
                           {status}
                         </span>
                       </td>
+                      {canCreate ? (
+                        <td>
+                          <div className="d-flex flex-wrap gap-2">
+                            <button className="btn btn-sm btn-outline-primary" type="button" onClick={() => { setEditingResource(res); setActionError(""); setActionNotice(""); }}>
+                              Edit
+                            </button>
+                            <button className="btn btn-sm btn-outline-danger" type="button" onClick={() => deleteResource(res)} disabled={deletingResourceId === resourceId}>
+                              {deletingResourceId === resourceId ? "Deleting…" : "Delete"}
+                            </button>
+                          </div>
+                        </td>
+                      ) : null}
                     </tr>
                   );
                 })}
@@ -347,7 +512,7 @@ const ResourceManagement = () => {
 
                 {filteredResources.length === 0 && (
                   <tr>
-                    <td colSpan="8" className="resource-empty">
+                    <td colSpan={canCreate ? 9 : 8} className="resource-empty">
                       No resources match the current filters.
                     </td>
                   </tr>

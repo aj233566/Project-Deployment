@@ -1,6 +1,6 @@
 .incident-details-page {
     min-height: 100vh;
-    background: #101416;
+    background: var(--bg-primary);
     color: #f1f5f6;
     padding: 28px 0 50px;
 }
@@ -21,7 +21,7 @@
         color 0.2s ease;
 }
 .back-btn:hover {
-    background: #1d2427;
+    background: var(--surface);
     border-color: #8fb6c5;
     color: #ffffff;
 }
@@ -51,8 +51,8 @@
 .incident-details-card {
     width: 100%;
     padding: 0;
-    background: #171c1f;
-    border: 1px solid #303b40;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
     border-radius: 9px;
     overflow: hidden;
 }
@@ -63,7 +63,7 @@
     gap: 30px;
     min-height: 56px;
     padding: 16px 20px;
-    border-bottom: 1px solid #303b40;
+    border-bottom: 1px solid var(--border);
 }
 .details-row:last-child {
     border-bottom: none;
@@ -92,8 +92,8 @@
 .incident-details-card h3 {
     margin: 0;
     padding: 18px 20px;
-    background: #1d2427;
-    border-bottom: 1px solid #303b40;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
     color: #f1f5f6;
     font-size: 26.6px;
     font-weight: 650;
@@ -103,7 +103,7 @@
     display: flex;
     justify-content: space-between;
     padding: 28px 30px 24px;
-    background: #171c1f;
+    background: var(--bg-secondary);
 }
 .lifecycle-step {
     position: relative;
@@ -125,7 +125,7 @@
     left: 12%;
     right: 12%;
     height: 1px;
-    background: #303b40;
+    background: var(--border);
 }
 .lifecycle-circle {
     position: relative;
@@ -137,7 +137,7 @@
     height: 34px;
     border: 1px solid #46555b;
     border-radius: 50%;
-    background: #171c1f;
+    background: var(--bg-secondary);
     color: #78878d;
     font-size: 18.8px;
     font-weight: 700;
@@ -146,14 +146,14 @@
     color: #c9d6da;
 }
 .lifecycle-step.completed .lifecycle-circle {
-    border-color: #3d8b63;
-    background: #3d8b63;
+    border-color: var(--risk-low);
+    background: var(--risk-low);
     color: #ffffff;
 }
 .status-controls {
     padding: 20px;
-    background: #1d2427;
-    border-top: 1px solid #303b40;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
 }
 .status-controls .form-label {
     display: block;
@@ -168,8 +168,8 @@
     width: 100%;
     min-height: 42px;
     padding: 9px 12px;
-    background-color: #242d31;
-    border: 1px solid #303b40;
+    background-color: var(--surface-elevated);
+    border: 1px solid var(--border);
     border-radius: 6px;
     color: #f1f5f6;
     font-size: 22.1px;
@@ -184,14 +184,14 @@
     border-color: #4f7c8a;
 }
 .status-controls .form-select:focus {
-    background-color: #242d31;
+    background-color: var(--surface-elevated);
     border-color: #4f7c8a;
     color: #f1f5f6;
     outline: none;
     box-shadow: 0 0 0 2px rgba(79, 124, 138, 0.15);
 }
 .status-controls .form-select option {
-    background: #1d2427;
+    background: var(--surface);
     color: #f1f5f6;
 }
 .container.py-4>h1.mt-4 {

@@ -117,34 +117,19 @@ function isCitizenNotification(notification) {
 }
 function getRiskBadgeClass(level) {
   const normalized = String(level || "").toLowerCase();
-  if (normalized === "red" || normalized === "orange") return "status-danger";
-  if (normalized === "yellow") return "status-moderate";
-  if (normalized === "green") return "status-safe";
-  if (normalized.includes("critical")) {
-    return "status-danger";
-  }
-  if (normalized.includes("high")) {
-    return "status-danger";
-  }
-  if (normalized.includes("moderate")) {
-    return "status-moderate";
-  }
-  if (normalized.includes("low")) {
-    return "status-safe";
-  }
-  return "status-moderate";
+  if (normalized === "red" || normalized.includes("critical")) return "status-danger";
+  if (normalized === "orange" || normalized.includes("high")) return "status-high";
+  if (normalized === "yellow" || normalized.includes("moderate")) return "status-moderate";
+  if (normalized === "green" || normalized.includes("low")) return "status-safe";
+  return "status-unknown";
 }
 function getIncidentSeverityClass(severity) {
   const normalized = String(severity || "reported").toLowerCase();
-  if (normalized === "critical" || normalized === "high") {
-    return "status-danger";
-  }
-  if (normalized === "moderate" || normalized === "medium") {
-    return "status-moderate";
-  }
+  if (normalized === "critical") return "status-danger";
+  if (normalized === "high") return "status-high";
+  if (normalized === "moderate" || normalized === "medium") return "status-moderate";
   return "status-safe";
-}
-function formatIncidentType(type) {
+}function formatIncidentType(type) {
   if (!type) {
     return "Incident";
   }
@@ -536,7 +521,7 @@ function Dashboard() {
 
               <div>
                 <div className="risk-value-row">
-                  <span className="risk-value">
+                  <span className={`risk-value ${riskBadgeClass}`}>
                     {riskScore != null ? riskScore : "--"}
                   </span>
 

@@ -9,6 +9,7 @@ const LEVEL_RANK = {
 async function processRiskAlert({
   location,
   multiHazard,
+  weather,
 }) {
   const score = multiHazard?.compositeScore;
   const zoneType = multiHazard?.redZone;
@@ -26,6 +27,16 @@ async function processRiskAlert({
     contribution: item.score,
     reason: item.reason,
   }));
+  const weatherSnapshot = weather ? {
+    source: weather.source || "Open-Meteo Forecast API",
+    updateTime: weather.updateTime || "",
+    rain: Number.isFinite(weather.rain) ? weather.rain : null,
+    precipitation: Number.isFinite(weather.precipitation) ? weather.precipitation : null,
+    next72HourPrecipitation: Number.isFinite(weather.forecast?.next72HourPrecipitation)
+      ? weather.forecast.next72HourPrecipitation
+      : null,
+    fetchedAt: new Date(),
+  } : null;
   const latitude = Number(location.latitude);
   const longitude = Number(location.longitude);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
@@ -53,6 +64,7 @@ async function processRiskAlert({
       },
       riskScore: score,
       riskLevel: level,
+      ...(weatherSnapshot ? { weather: weatherSnapshot } : {}),
       aiConfidence: null,
       majorContributors: contributors,
       recommendations: contributors.map((item) => item.reason),
@@ -70,6 +82,7 @@ async function processRiskAlert({
   }
   alert.riskScore = score;
   alert.riskLevel = level;
+  if (weatherSnapshot) alert.weather = weatherSnapshot;
   alert.hazardType = leadingHazard?.hazardType || null;
   alert.zoneType = zoneType;
   alert.aiConfidence = null;

@@ -2,9 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { apiBaseUrl } from "../services/api";
 import { setSession } from "../context/session";
-import stateDistricts, {
-  unionTerritoryDistricts,
-} from "../data/stateDistricts";
+import stateDistricts, { unionTerritoryDistricts } from "../data/stateDistricts";
 function Signup() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -109,16 +107,13 @@ function Signup() {
         requestBody.designation = formData.designation.trim();
         requestBody.employeeId = formData.employeeId.trim();
       }
-      const response = await fetch(
-        `${apiBaseUrl}/auth/${oauthSignup ? "oauth" : "signup"}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
+      const response = await fetch(`${apiBaseUrl}/auth/${oauthSignup ? "oauth" : "signup"}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify(requestBody),
+      });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || "Unable to create account.");
@@ -157,13 +152,18 @@ function Signup() {
       <div className="container-fluid">
         <div className="row min-vh-100 align-items-center justify-content-center">
           <div className="col-12 col-sm-11 col-md-10 col-lg-9 col-xl-8">
+
             <div className="auth-brand text-center">
-              <div className="brand-mark" aria-hidden="true">
-                <img src="/senetry-logo-transparent.svg" alt="" />
-              </div>
+              <div className="brand-mark" aria-hidden="true"><img src="/senetry-logo-transparent.svg" alt="" /></div>
 
               <h1>SENETRY</h1>
+
+              <p>
+                Multi-Hazard Disaster Intelligence
+                <br />& Early Warning System
+              </p>
             </div>
+
 
             <section className="auth-card signup-card">
               <div className="auth-card-header">
@@ -174,9 +174,10 @@ function Signup() {
                 <p>
                   {oauthSignup
                     ? "Add your phone and monitoring location to finish creating your citizen account."
-                    : ""}
+                    : "Register to monitor risks, receive alerts and report incidents."}
                 </p>
               </div>
+
 
               {error && (
                 <div className="auth-message auth-message-error" role="alert">
@@ -198,9 +199,11 @@ function Signup() {
               )}
 
               <form onSubmit={handleSubmit}>
+
                 <div className="form-section-title">PERSONAL INFORMATION</div>
 
                 <div className="row g-3">
+
                   <div className="col-12 col-md-6">
                     <label htmlFor="signup-name" className="form-label">
                       Full name
@@ -220,6 +223,7 @@ function Signup() {
                     />
                   </div>
 
+
                   <div className="col-12 col-md-6">
                     <label htmlFor="signup-phone" className="form-label">
                       Phone number
@@ -237,6 +241,7 @@ function Signup() {
                       required
                     />
                   </div>
+
 
                   <div className="col-12">
                     <label htmlFor="signup-email" className="form-label">
@@ -264,11 +269,13 @@ function Signup() {
                   </div>
                 </div>
 
+
                 <div className="form-section-title mt-4">
                   MONITORING LOCATION
                 </div>
 
                 <div className="row g-3">
+
                   <div className="col-12 col-md-6">
                     <label htmlFor="signup-state" className="form-label">
                       State / Union Territory
@@ -285,22 +292,17 @@ function Signup() {
                       <option value="">Select state or union territory</option>
                       <optgroup label="States">
                         {Object.keys(stateDistricts).map((state) => (
-                          <option key={state} value={state}>
-                            {state}
-                          </option>
+                          <option key={state} value={state}>{state}</option>
                         ))}
                       </optgroup>
                       <optgroup label="Union Territories">
-                        {Object.keys(unionTerritoryDistricts).map(
-                          (territory) => (
-                            <option key={territory} value={territory}>
-                              {territory}
-                            </option>
-                          ),
-                        )}
+                        {Object.keys(unionTerritoryDistricts).map((territory) => (
+                          <option key={territory} value={territory}>{territory}</option>
+                        ))}
                       </optgroup>
                     </select>
                   </div>
+
 
                   <div className="col-12 col-md-6">
                     <label htmlFor="signup-district" className="form-label">
@@ -317,79 +319,67 @@ function Signup() {
                       required
                     >
                       <option value="">
-                        {formData.state
-                          ? "Select district"
-                          : "Select a state or union territory first"}
+                        {formData.state ? "Select district" : "Select a state or union territory first"}
                       </option>
-                      {(
-                        stateDistricts[formData.state] ||
-                        unionTerritoryDistricts[formData.state] ||
-                        []
-                      ).map((district) => (
-                        <option key={district} value={district}>
-                          {district}
-                        </option>
+                      {(stateDistricts[formData.state] || unionTerritoryDistricts[formData.state] || []).map((district) => (
+                        <option key={district} value={district}>{district}</option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                {!oauthSignup && (
-                  <>
-                    <div className="form-section-title mt-4">ACCOUNT TYPE</div>
-                    <div className="role-options">
-                      <label
-                        className={`role-option ${
-                          formData.role === "citizen"
-                            ? "role-option-active"
-                            : ""
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="role"
-                          value="citizen"
-                          checked={formData.role === "citizen"}
-                          onChange={() => handleRoleChange("citizen")}
-                        />
 
-                        <div>
-                          <strong>Citizen / Community</strong>
+                {!oauthSignup && <>
+                <div className="form-section-title mt-4">ACCOUNT TYPE</div>
+                <div className="role-options">
 
-                          <span>
-                            View local risk, receive alerts and report
-                            incidents.
-                          </span>
-                        </div>
-                      </label>
+                  <label
+                    className={`role-option ${
+                      formData.role === "citizen" ? "role-option-active" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="role"
+                      value="citizen"
+                      checked={formData.role === "citizen"}
+                      onChange={() => handleRoleChange("citizen")}
+                    />
 
-                      <label
-                        className={`role-option ${
-                          formData.role === "authority"
-                            ? "role-option-active"
-                            : ""
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="role"
-                          value="authority"
-                          checked={formData.role === "authority"}
-                          onChange={() => handleRoleChange("authority")}
-                        />
+                    <div>
+                      <strong>Citizen / Community</strong>
 
-                        <div>
-                          <strong>Disaster Management Authority</strong>
-
-                          <span>
-                            Monitor incidents, risk zones and emergency
-                            response.
-                          </span>
-                        </div>
-                      </label>
+                      <span>
+                        View local risk, receive alerts and report incidents.
+                      </span>
                     </div>
-                  </>
-                )}
+                  </label>
+
+
+                  <label
+                    className={`role-option ${
+                      formData.role === "authority" ? "role-option-active" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="role"
+                      value="authority"
+                      checked={formData.role === "authority"}
+                      onChange={() => handleRoleChange("authority")}
+                    />
+
+                    <div>
+                      <strong>Disaster Management Authority</strong>
+
+                      <span>
+                        Monitor incidents, risk zones and emergency response.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+                </>}
+
 
                 {!oauthSignup && formData.role === "authority" && (
                   <>
@@ -407,6 +397,7 @@ function Signup() {
                     </div>
 
                     <div className="row g-3 mt-1">
+
                       <div className="col-12 col-md-6">
                         <label
                           htmlFor="signup-department"
@@ -428,6 +419,7 @@ function Signup() {
                         />
                       </div>
 
+
                       <div className="col-12 col-md-6">
                         <label
                           htmlFor="signup-designation"
@@ -448,6 +440,7 @@ function Signup() {
                           required
                         />
                       </div>
+
 
                       <div className="col-12">
                         <label
@@ -473,74 +466,76 @@ function Signup() {
                   </>
                 )}
 
-                {!oauthSignup && (
-                  <>
-                    <div className="form-section-title mt-4"></div>
 
-                    <div className="row g-3">
-                      <div className="col-12 col-md-6">
-                        <label htmlFor="signup-password" className="form-label">
-                          Password
-                        </label>
+                {!oauthSignup && <>
+                <div className="form-section-title mt-4">SECURITY</div>
 
-                        <div className="password-wrapper">
-                          <input
-                            id="signup-password"
-                            type={showPassword ? "text" : "password"}
-                            name="password"
-                            className="form-control auth-input"
-                            placeholder="Create password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            autoComplete="new-password"
-                            required
-                          />
+                <div className="row g-3">
 
-                          <button
-                            type="button"
-                            className="password-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? "HIDE" : "SHOW"}
-                          </button>
-                        </div>
-                      </div>
+                  <div className="col-12 col-md-6">
+                    <label htmlFor="signup-password" className="form-label">
+                      Password
+                    </label>
 
-                      <div className="col-12 col-md-6">
-                        <label
-                          htmlFor="signup-confirm-password"
-                          className="form-label"
-                        >
-                          Confirm password
-                        </label>
+                    <div className="password-wrapper">
+                      <input
+                        id="signup-password"
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        className="form-control auth-input"
+                        placeholder="Create password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        autoComplete="new-password"
+                        required
+                      />
 
-                        <div className="password-wrapper">
-                          <input
-                            id="signup-confirm-password"
-                            type={showConfirmPassword ? "text" : "password"}
-                            name="confirmPassword"
-                            className="form-control auth-input"
-                            placeholder="Confirm password"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            autoComplete="new-password"
-                            required
-                          />
-
-                          <button
-                            type="button"
-                            className="password-toggle"
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
-                          >
-                            {showConfirmPassword ? "HIDE" : "SHOW"}
-                          </button>
-                        </div>
-                      </div>
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? "HIDE" : "SHOW"}
+                      </button>
                     </div>
-                  </>
-                )}
+                  </div>
+
+
+                  <div className="col-12 col-md-6">
+                    <label
+                      htmlFor="signup-confirm-password"
+                      className="form-label"
+                    >
+                      Confirm password
+                    </label>
+
+                    <div className="password-wrapper">
+                      <input
+                        id="signup-confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        name="confirmPassword"
+                        className="form-control auth-input"
+                        placeholder="Confirm password"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        autoComplete="new-password"
+                        required
+                      />
+
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      >
+                        {showConfirmPassword ? "HIDE" : "SHOW"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                </>}
+
 
                 <div className="terms-row mt-4">
                   <input
@@ -551,11 +546,12 @@ function Signup() {
                   />
 
                   <label htmlFor="terms">
-                    I agree to the SENETRY terms and acknowledge that submitted
-                    incident information may be used for disaster monitoring and
-                    response.
+                    I agree to the SENETRY terms and acknowledge that
+                    submitted incident information may be used for disaster
+                    monitoring and response.
                   </label>
                 </div>
+
 
                 <button
                   type="submit"
@@ -569,9 +565,7 @@ function Signup() {
                         aria-hidden="true"
                       />
 
-                      {oauthSignup
-                        ? "Creating your account…"
-                        : formData.role === "authority"
+                      {oauthSignup ? "Creating your account…" : formData.role === "authority"
                         ? "Submit authority application..."
                         : "Create account"}
                     </>
@@ -585,6 +579,7 @@ function Signup() {
                 </button>
               </form>
 
+
               <div className="auth-footer">
                 <span>Already have an account?</span>
 
@@ -592,7 +587,12 @@ function Signup() {
               </div>
             </section>
 
-            <div className="auth-security-note"></div>
+
+            <div className="auth-security-note">
+              <span className="security-dot"></span>
+
+              <span>Secure operational platform</span>
+            </div>
           </div>
         </div>
       </div>

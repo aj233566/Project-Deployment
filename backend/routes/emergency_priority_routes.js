@@ -1,9 +1,13 @@
 const express = require("express");
-const { protect, optionalProtect, authorizeAuthorityOrAdmin } = require("../middlewares/auth_middleware");
+const { protect, optionalProtect, authorizeAuthorityOrAdmin, authorizeVerifiedAuthority } = require("../middlewares/auth_middleware");
 const {
     getPrioritisedAreas,
     getPrioritisedAreaById,
-    dispatchTeam
+    dispatchTeam,
+    completeDispatch,
+    createManagedEmergencyArea,
+    updateManagedEmergencyArea,
+    deleteManagedEmergencyArea
 } = require(
     "../controllers/emergency_priority_controller"
 );
@@ -18,10 +22,19 @@ router.get(
     optionalProtect,
     getPrioritisedAreaById
 );
+router.post("/managed", protect, authorizeVerifiedAuthority, createManagedEmergencyArea);
+router.patch("/:id/managed", protect, authorizeVerifiedAuthority, updateManagedEmergencyArea);
+router.delete("/:id/managed", protect, authorizeVerifiedAuthority, deleteManagedEmergencyArea);
 router.post(
     "/:id/dispatch",
     protect,
     authorizeAuthorityOrAdmin,
     dispatchTeam
+);
+router.patch(
+    "/:id/dispatch/complete",
+    protect,
+    authorizeVerifiedAuthority,
+    completeDispatch
 );
 module.exports = router;

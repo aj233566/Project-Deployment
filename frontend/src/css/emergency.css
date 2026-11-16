@@ -42,7 +42,7 @@
 }
 .queue-tag-badge.p1 { background-color: var(--critical); color: #ffffff; }
 .queue-tag-badge.p2 { background-color: var(--high-risk); color: #ffffff; }
-.queue-tag-badge.p3 { background-color: var(--warning); color: #101416; }
+.queue-tag-badge.p3 { background-color: var(--warning); color: var(--bg-primary); }
 .queue-subtext {
   font-size: 1.259rem;
   color: var(--text-muted);

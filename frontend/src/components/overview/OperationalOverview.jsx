@@ -18,6 +18,7 @@ import Modal from "../common/Modal";
 import AlertDetails from "../alerts/AlertDetails";
 import GisCommandCenter from "../gis/GisCommandCenter";
 import { sentryApi } from "../../services/sentryApi";
+import { isAlertActive } from "../../utils/alertState";
 export const OperationalOverview = () => {
   const {
     alerts = [], alertsLoading, alertsError, loadAlerts,
@@ -63,6 +64,9 @@ export const OperationalOverview = () => {
   const criticalAlerts = alerts.filter(
     (alert) => getRiskLevel(alert) === "CRITICAL",
   );
+  const urgentAlert = alerts
+    .filter((alert) => isAlertActive(alert) && ["CRITICAL", "HIGH"].includes(getRiskLevel(alert)))
+    .sort((a, b) => Number(b.riskScore || 0) - Number(a.riskScore || 0))[0] || null;
   const eligibleRelocationSites = (sentryData?.sites || [])
     .filter((site) => site.status === "ACTIVE" && site.roadAccess === "OPEN" && Number.isFinite(site.suitability) && site.suitability >= 50);
   const availableRelocationCapacity = eligibleRelocationSites.length > 0
@@ -124,7 +128,7 @@ export const OperationalOverview = () => {
   return (
     <div className="container-fluid p-0 overview-container">
 
-      <WarningBanner onSelectAlert={(alert) => setSelectedAlert(alert)} />
+      {urgentAlert ? <WarningBanner alert={urgentAlert} onClick={() => setSelectedAlert(urgentAlert)} /> : null}
       {emergencyAreasError ? <div className="alert alert-danger" role="alert">{emergencyAreasError}<button className="btn btn-link" onClick={loadEmergencyAreas}>Retry</button></div> : null}
 
 
@@ -384,6 +388,7 @@ export const OperationalOverview = () => {
         maxWidth="720px"
       >
         <AlertDetails
+          key={selectedAlert?._id || selectedAlert?.id || "alert-details"}
           alert={selectedAlert}
           onClose={() => setSelectedAlert(null)}
         />

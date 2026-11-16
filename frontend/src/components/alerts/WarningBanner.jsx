@@ -30,13 +30,14 @@ function WarningBanner({
   const title =
     alert.title ||
     alert.name ||
-    "Early Warning Alert";
+    `${String(severity).toUpperCase()} risk alert`;
   const message =
     alert.message ||
     alert.description ||
+    alert.action ||
     "A potential hazard has been detected.";
   const location =
-    alert.location ||
+    (typeof alert.location === "string" ? alert.location : alert.location?.name) ||
     alert.area ||
     alert.region ||
     "";
@@ -54,10 +55,6 @@ function WarningBanner({
     <div
       className={`warning-banner warning-banner-${normalizedSeverity}`}
       role="alert"
-      onClick={onClick}
-      style={{
-        cursor: onClick ? "pointer" : "default",
-      }}
     >
       <div className="warning-banner-icon">
         <Icon size={22} />
@@ -92,6 +89,7 @@ function WarningBanner({
         )}
 
       </div>
+      {onClick ? <button type="button" className="warning-banner-review" onClick={onClick}>Review alert</button> : null}
     </div>
   );
 }

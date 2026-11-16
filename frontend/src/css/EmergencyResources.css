@@ -29,9 +29,9 @@
   align-items: center;
   gap: 8px;
   padding: 9px 14px;
-  border: 1px solid rgba(61, 139, 99, 0.45);
+  border: 1px solid color-mix(in srgb, var(--risk-low) 45%, transparent);
   border-radius: 5px;
-  background: rgba(61, 139, 99, 0.1);
+  background: color-mix(in srgb, var(--risk-low) 10%, transparent);
   color: var(--safe);
   font-size: 18.8px;
   font-weight: 600;
@@ -44,8 +44,8 @@
   background: var(--safe);
 }
 .emergency-resources-status.is-unavailable {
-  border-color: rgba(217, 119, 50, 0.45);
-  background: rgba(217, 119, 50, 0.1);
+  border-color: color-mix(in srgb, var(--risk-high) 45%, transparent);
+  background: color-mix(in srgb, var(--risk-high) 10%, transparent);
   color: var(--warning);
 }
 .emergency-resources-status.is-unavailable::before {
@@ -190,8 +190,8 @@
   align-items: center;
   margin-bottom: 10px;
   padding: 4px 7px;
-  background: rgba(61, 139, 99, 0.12);
-  border: 1px solid rgba(61, 139, 99, 0.35);
+  background: color-mix(in srgb, var(--risk-low) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--risk-low) 35%, transparent);
   border-radius: 4px;
   color: var(--safe);
   font-size: 15.7px;
@@ -199,8 +199,8 @@
   text-transform: uppercase;
 }
 .emergency-resource-card:nth-child(3) .emergency-resource-status {
-  background: rgba(201, 162, 39, 0.12);
-  border-color: rgba(201, 162, 39, 0.35);
+  background: color-mix(in srgb, var(--risk-moderate) 12%, transparent);
+  border-color: color-mix(in srgb, var(--risk-moderate) 35%, transparent);
   color: var(--warning);
 }
 .emergency-resource-count {
@@ -308,8 +308,8 @@
 }
 .emergency-deployment-count {
   padding: 5px 8px;
-  background: rgba(217, 119, 50, 0.12);
-  border: 1px solid rgba(217, 119, 50, 0.35);
+  background: color-mix(in srgb, var(--risk-high) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--risk-high) 35%, transparent);
   border-radius: 4px;
   color: var(--high-risk);
   font-size: 15.7px;

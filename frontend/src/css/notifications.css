@@ -61,7 +61,7 @@
 }
 .notif-feed-card.unread {
   border-left: 4px solid var(--critical);
-  background-color: rgba(214, 69, 69, 0.03);
+  background-color: color-mix(in srgb, var(--risk-critical) 3%, transparent);
 }
 .notif-channel-badge {
   display: inline-flex;
@@ -382,7 +382,7 @@
   border-left: 3px solid var(--warning, #d8b536);
 }
 .notif-feed-card.critical {
-  border-left: 3px solid var(--critical, #d64545);
+  border-left: 3px solid var(--critical, var(--risk-critical));
 }
 .notif-delivered {
   color: #4caf78;
@@ -391,13 +391,13 @@
   color: #d8b536;
 }
 .notif-failed {
-  color: #d64545;
+  color: var(--risk-critical);
 }
 .notif-unread-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background-color: var(--critical, #d64545);
+  background-color: var(--critical, var(--risk-critical));
   flex-shrink: 0;
 }
 .notif-mark-read-btn {
