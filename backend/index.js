@@ -29,6 +29,8 @@ const relocationPriorityRoutes = require("./routes/relocation_priority_routes");
 const meshRoutes = require("./routes/mesh_routes");
 const liveRoutes = require("./routes/live_routes");
 const liveHub = require("./services/live_hub");
+const pushRoutes = require("./routes/push_routes");
+const pushService = require("./services/push_service");
 const {
     analyzeRisk
 } = require("./risk-intelligence/services/riskEngine");
@@ -174,6 +176,8 @@ app.use("/api/nearby", nearbyRoutes);
 app.use("/api/relocation-priority", relocationPriorityRoutes);
 app.use("/api/mesh", meshRoutes);
 app.use("/api/live", liveRoutes);
+app.use("/api/push", pushRoutes);
+pushService.attach(require("./models/notification"));
 liveHub.attach(require("./models/notification"), "notification");
 liveHub.attach(require("./models/mesh_message"), "citizen-report");
 app.get("/api/weather/current", async (req, res, next) => {

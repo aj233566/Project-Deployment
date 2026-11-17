@@ -15,6 +15,16 @@ const PROVIDERS = {
             : null
     }
 };
+// The setting can hold one app id, or several separated by commas (for example the website's app and the phone app's app of the same sign-in provider).
+function configuredIds(value) {
+    return String(value || "").split(",").map((id) => id.trim()).filter(Boolean);
+}
+// A token is for us when the app it was issued to is one of the configured ones.
+function audienceMatches(aud, value) {
+    const ids = configuredIds(value);
+    const issuedTo = Array.isArray(aud) ? aud : [aud];
+    return ids.length > 0 && issuedTo.some((a) => typeof a === "string" && ids.includes(a));
+}
 function decodePart(part) {
     return JSON.parse(Buffer.from(part, "base64url").toString("utf8"));
 }
@@ -79,8 +89,7 @@ async function verifyIdentityToken(providerName, token) {
     const issuerValid = provider.issuers
         ? provider.issuers.includes(claims.iss)
         : claims.iss === provider.issuerFor(claims);
-    const audienceValid = claims.aud === clientId
-        || (Array.isArray(claims.aud) && claims.aud.includes(clientId));
+    const audienceValid = audienceMatches(claims.aud, clientId);
     if (!verified) throw tokenError("TOKEN_SIGNATURE_INVALID");
     if (!issuerValid) throw tokenError("TOKEN_ISSUER_MISMATCH");
     if (!audienceValid) throw tokenError("TOKEN_AUDIENCE_MISMATCH");
@@ -98,4 +107,4 @@ async function verifyIdentityToken(providerName, token) {
         name: String(claims.name || email.split("@")[0]).trim().slice(0, 120)
     };
 }
-module.exports = { verifyIdentityToken };
+module.exports = { verifyIdentityToken, audienceMatches };
