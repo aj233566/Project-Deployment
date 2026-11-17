@@ -169,6 +169,10 @@ export default function Map3D({
     if (import.meta.env.DEV) window.__sentryGl = map;
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+    // Start with compact attribution so its full source list does not cover the map.
+    const attribution = boxRef.current?.querySelector('.maplibregl-ctrl-attrib');
+    attribution?.classList.remove('maplibregl-compact-show');
+    attribution?.querySelector('details')?.removeAttribute('open');
     const adapter = createAdapter(map, boxRef.current);
 
     map.on('error', (event) => {

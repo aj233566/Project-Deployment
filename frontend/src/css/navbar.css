@@ -7,6 +7,20 @@
 }
 .senetry-navbar .navbar-brand,
 .senetry-navbar .senetry-navbar-name { color: var(--ink); }
+/* The command-center navigation was visually smaller than the shared page navigation. */
+.command-center-wrapper > .senetry-navbar .nav-link,
+.command-center-wrapper > .senetry-navbar .grouped-nav-trigger {
+  min-height: 40px;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.4rem;
+  font-size: 18px;
+  font-weight: 600;
+}
+.command-center-wrapper > .senetry-navbar .nav-link.active,
+.command-center-wrapper > .senetry-navbar .grouped-nav-trigger.active {
+  background: var(--surface-elevated);
+  box-shadow: inset 0 -2px 0 var(--ui-accent);
+}
 .senetry-navbar-brand { align-items: center; display: inline-flex; gap: 0.5rem; }
 .senetry-navbar-mark { position: relative; display: block; width: 38px; height: 38px; overflow: hidden; border: 1px solid var(--line); border-radius: 0.45rem; background: var(--stone); }
 .senetry-navbar-mark img { position: absolute; top: -40px; left: -48px; width: 135px; height: 135px; max-width: none; }

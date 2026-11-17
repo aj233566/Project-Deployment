@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
 import { apiBaseUrl } from "../services/api";
 import { setSession } from "../context/session";
+import { applyTheme, getSavedTheme } from "../utils/theme.js";
 import OAuthButtons from "../components/OAuthButtons";
 function Login() {
   const navigate = useNavigate();
+  const [isDark, setIsDark] = useState(() => getSavedTheme() === "dark");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -12,6 +15,11 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const toggleTheme = () => {
+    const nextTheme = isDark ? "light" : "dark";
+    applyTheme(nextTheme);
+    setIsDark(nextTheme === "dark");
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((previous) => ({
@@ -107,7 +115,19 @@ function Login() {
 
             <section className="auth-card">
               <div className="auth-card-header">
-                <span className="section-label">SECURE ACCESS</span>
+                <div className="auth-card-toolbar">
+                  <span className="section-label">SECURE ACCESS</span>
+                  <button
+                    type="button"
+                    className="auth-theme-toggle"
+                    onClick={toggleTheme}
+                    aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+                    aria-pressed={isDark}
+                    title={`Switch to ${isDark ? "light" : "dark"} mode`}
+                  >
+                    {isDark ? <Sun aria-hidden="true" size={19} /> : <Moon aria-hidden="true" size={19} />}
+                  </button>
+                </div>
 
                 <h2>Welcome back</h2>
 
@@ -206,7 +226,7 @@ function Login() {
               </form>
 
               <div className="oauth-heading">Or sign in with</div>
-              <OAuthButtons onCredential={handleProviderCredential} disabled={loading} />
+              <OAuthButtons onCredential={handleProviderCredential} disabled={loading} googleTheme={isDark ? "filled_black" : "outline"} />
 
               <div className="auth-divider">
                 <span>NEW TO SENETRY?</span>

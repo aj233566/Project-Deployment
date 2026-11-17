@@ -4337,3 +4337,115 @@ button.gis-cz-cond:hover {
 @keyframes fxFade { 0%, 82% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .fx-arrow { display: none; } .fx-pin { animation: fxFade 3.3s linear both; } }
 @media (max-width: 600px) { .gis-fx-hits { left: 6px; bottom: 28px; padding: 6px 8px; } .gis-fx-hits-title { font-size: 18px; } .gis-fx-hits-count { font-size: 22px; } .gis-fx-hits-count em { font-size: 18px; } }
+
+/* Citizen GIS surfaces follow the selected app theme; the basemap remains independent. */
+.gis-app-wrapper.gis-role-citizen {
+  --bg-app: var(--stone);
+  --bg-sidebar: var(--paper);
+  --bg-card: var(--paper);
+  --bg-elevated: var(--surface-elevated);
+  --border-subtle: var(--line);
+  --border-accent: var(--ui-accent);
+  --accent: var(--ui-accent);
+  --accent-strong: var(--ui-accent);
+  --accent-dim: var(--ui-accent);
+  --accent-glow: color-mix(in srgb, var(--ui-accent) 18%, transparent);
+  --accent-glow-soft: color-mix(in srgb, var(--ui-accent) 9%, transparent);
+  --text-primary: var(--ink);
+  --text-secondary: var(--slate);
+  --text-muted: var(--slate);
+}
+.gis-role-citizen .gis-header-citizen {
+  background: var(--paper) !important;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.gis-role-citizen .gis-header-citizen .gis-brand-name,
+.gis-role-citizen .gis-header-citizen .gis-cz-header-sub { color: var(--ink); }
+.gis-role-citizen .gis-header-citizen .gis-cz-header-sub { opacity: 0.78; }
+.gis-role-citizen .gis-citizen-sidecol {
+  background: var(--stone) !important;
+  border-color: var(--line);
+}
+.gis-role-citizen .gis-citizen-panel { color: var(--ink); }
+.gis-role-citizen .gis-cz-section-label,
+.gis-role-citizen .gis-cz-note { color: var(--slate); }
+.gis-role-citizen .gis-cz-section-label::before { background: var(--ui-accent); box-shadow: none; }
+.gis-role-citizen .gis-cz-map-tools,
+.gis-role-citizen .gis-cz-map-tools.citizen-map-tools-inline,
+.gis-role-citizen .citizen-map-emergency-tools {
+  background: var(--surface-elevated) !important;
+  border-color: var(--line) !important;
+  box-shadow: none;
+}
+.gis-role-citizen .citizen-map-emergency-tools .gis-cz-section-label { color: var(--slate); }
+.gis-role-citizen .citizen-map-emergency-tools .gis-cz-section-label::before { background: var(--ui-accent); box-shadow: none; }
+.gis-role-citizen .citizen-map-emergency-tools .gis-cz-locmode { background: var(--paper); border-color: var(--line); }
+.gis-role-citizen .citizen-map-emergency-tools .gis-cz-locmode-demo .gis-cz-locmode-text { color: var(--risk-moderate-ink); }
+.gis-role-citizen .citizen-map-emergency-tools .gis-cz-locmode-live .gis-cz-locmode-text { color: var(--risk-low-ink); }
+.gis-role-citizen .gis-cz-map-provider {
+  background: color-mix(in srgb, var(--ui-accent) 10%, var(--paper));
+  color: var(--ui-accent);
+}
+.gis-role-citizen .gis-cz-map-style,
+.gis-role-citizen .gis-cz-map-layer,
+.gis-role-citizen .gis-cz-map-reset,
+.gis-role-citizen .citizen-map-tools-inline .gis-cz-map-layer,
+.gis-role-citizen .citizen-map-tools-inline .gis-cz-map-reset {
+  border-color: var(--line) !important;
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+}
+.gis-role-citizen .gis-cz-map-style:hover,
+.gis-role-citizen .gis-cz-map-layer:hover,
+.gis-role-citizen .gis-cz-map-reset:hover { border-color: var(--ui-accent) !important; }
+.gis-role-citizen .gis-cz-map-style.active,
+.gis-role-citizen .gis-cz-map-layer.active,
+.gis-role-citizen .citizen-map-tools-inline .gis-cz-map-layer.active {
+  border-color: var(--ui-accent) !important;
+  background: var(--ui-accent) !important;
+  color: var(--accent-contrast) !important;
+  box-shadow: none;
+}
+.gis-role-citizen .gis-cz-action:not(.gis-cz-action-sos) {
+  border-color: var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.gis-role-citizen .gis-cz-action:not(.gis-cz-action-sos):hover:not(:disabled) {
+  border-color: var(--ui-accent);
+  background: var(--surface-elevated);
+}
+.gis-role-citizen .gis-cz-action.active:not(.gis-cz-action-sos) {
+  border-color: var(--ui-accent);
+  background: color-mix(in srgb, var(--ui-accent) 12%, var(--paper));
+  color: var(--ui-accent);
+}
+.gis-role-citizen .gis-cz-action-safe.active { background: var(--risk-low); border-color: var(--risk-low); color: #fff; }
+.gis-role-citizen .gis-cz-action:not(.gis-cz-action-sos) .gis-cz-action-ico {
+  background: color-mix(in srgb, var(--ui-accent) 10%, var(--paper));
+}
+.gis-role-citizen .gis-cz-card {
+  border-color: var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--ink) 9%, transparent);
+}
+.gis-role-citizen .gis-cz-card:hover:not(:disabled) {
+  border-color: var(--ui-accent);
+  background: var(--surface-elevated);
+}
+.gis-role-citizen .gis-cz-card-title { color: var(--slate); }
+.gis-role-citizen .gis-cz-card-sub { color: var(--ink); }
+.gis-role-citizen .gis-cz-card-tag {
+  border-color: color-mix(in srgb, var(--ui-accent) 26%, var(--line));
+  background: color-mix(in srgb, var(--ui-accent) 9%, var(--paper));
+  color: var(--ui-accent);
+}
+.gis-role-citizen .gis-cz-dir,
+.gis-role-citizen .gis-cz-dir:hover { color: var(--ui-accent); }
+.gis-role-citizen .gis-cz-report { background: var(--paper); border-color: var(--line); }
+.gis-role-citizen .gis-cz-input { background: var(--surface-elevated); border-color: var(--line); color: var(--ink); }
+.gis-role-citizen .gis-cz-input::placeholder { color: var(--slate); }

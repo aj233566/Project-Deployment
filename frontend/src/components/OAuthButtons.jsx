@@ -37,7 +37,7 @@ function getMicrosoftClient() {
   }
   return microsoftClientPromise;
 }
-export default function OAuthButtons({ onCredential, disabled = false }) {
+export default function OAuthButtons({ onCredential, disabled = false, googleTheme = "outline" }) {
   const googleHost = useRef(null);
   const callbackRef = useRef(onCredential);
   const microsoftInteractionInProgress = useRef(false);
@@ -62,7 +62,7 @@ export default function OAuthButtons({ onCredential, disabled = false }) {
       googleHost.current.replaceChildren();
       window.google.accounts.id.renderButton(googleHost.current, {
         type: "standard",
-        theme: "outline_dark",
+        theme: googleTheme,
         size: "large",
         text: "signin_with",
         shape: "rectangular",
@@ -84,7 +84,7 @@ export default function OAuthButtons({ onCredential, disabled = false }) {
       active = false;
       if (buttonCheckTimer) window.clearTimeout(buttonCheckTimer);
     };
-  }, []);
+  }, [googleTheme]);
   const handleMicrosoft = useCallback(async () => {
     if (!microsoftClientId || microsoftInteractionInProgress.current) return;
     microsoftInteractionInProgress.current = true;

@@ -11,6 +11,35 @@ const accountStatusMessage = (status) => ({
     deleted: "This account is no longer available."
 }[status] || "This account cannot sign in.");
 
+const legacySessionList = {
+    $cond: [
+        { $and: [{ $ne: ["$activeSessionId", null] }, { $ne: ["$activeSessionId", ""] }] },
+        ["$activeSessionId"],
+        []
+    ]
+};
+const claimLoginSession = (userId, sessionId, resetFailedAttempts = false) => User.findOneAndUpdate(
+    {
+        _id: userId,
+        $and: [
+            { $or: [{ accountStatus: "active" }, { accountStatus: { $exists: false } }] },
+            {
+                $expr: {
+                    $lt: [
+                        { $size: { $setUnion: [{ $ifNull: ["$activeSessionIds", []] }, legacySessionList] } },
+                        { $ifNull: ["$maxConcurrentSessions", { $cond: [{ $eq: ["$role", "admin"] }, 3, 1] }] }
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        $addToSet: { activeSessionIds: sessionId },
+        ...(resetFailedAttempts ? { $set: { failedLoginAttempts: 0 } } : {})
+    },
+    { returnDocument: "after" }
+);
+
 const recordFailedPasswordAttempt = async (userId) => {
     const activeStatus = {
         $or: [
@@ -47,7 +76,8 @@ const recordFailedPasswordAttempt = async (userId) => {
                 accountStatusReason: "Locked automatically after 5 consecutive incorrect passwords.",
                 accountStatusUpdatedAt: new Date(),
                 accountStatusUpdatedBy: null,
-                activeSessionId: null
+                activeSessionId: null,
+                activeSessionIds: []
             },
             $inc: { failedLoginAttempts: 1 }
         },
@@ -242,27 +272,7 @@ const login = async (req, res) => {
             });
         }
         const sessionId = crypto.randomBytes(32).toString("hex");
-        const claimedUser = await User.findOneAndUpdate(
-            {
-                _id: user._id,
-                $and: [
-                    {
-                        $or: [
-                            { activeSessionId: null },
-                            { activeSessionId: { $exists: false } }
-                        ]
-                    },
-                    {
-                        $or: [
-                            { accountStatus: "active" },
-                            { accountStatus: { $exists: false } }
-                        ]
-                    }
-                ]
-            },
-            { $set: { activeSessionId: sessionId, failedLoginAttempts: 0 } },
-            { returnDocument: "after" }
-        );
+        const claimedUser = await claimLoginSession(user._id, sessionId, true);
         if (!claimedUser) {
             const latestUser = await User.findById(user._id);
             if (latestUser?.accountStatus && latestUser.accountStatus !== "active") {
@@ -275,7 +285,7 @@ const login = async (req, res) => {
             return res.status(409).json({
                 success: false,
                 code: "ACCOUNT_ALREADY_LOGGED_IN",
-                message: "This account is already logged in on another device. Please log out from that device or use another account."
+                message: `This account has reached its ${latestUser?.maxConcurrentSessions || (latestUser?.role === "admin" ? 3 : 1)}-device sign-in limit. Sign out on another device or ask an administrator to raise the limit.`
             });
         }
         const token = jwt.sign(
@@ -382,22 +392,12 @@ const oauthLogin = async (req, res) => {
             });
         }
         const sessionId = crypto.randomBytes(32).toString("hex");
-        const claimedUser = await User.findOneAndUpdate(
-            {
-                _id: user._id,
-                $and: [
-                    { $or: [{ activeSessionId: null }, { activeSessionId: { $exists: false } }] },
-                    { $or: [{ accountStatus: "active" }, { accountStatus: { $exists: false } }] }
-                ]
-            },
-            { $set: { activeSessionId: sessionId } },
-            { returnDocument: "after" }
-        );
+        const claimedUser = await claimLoginSession(user._id, sessionId);
         if (!claimedUser) {
             return res.status(409).json({
                 success: false,
                 code: "ACCOUNT_ALREADY_LOGGED_IN",
-                message: "This account is already logged in on another device. Please log out from that device or use another account."
+                message: `This account has reached its ${user.maxConcurrentSessions || (user.role === "admin" ? 3 : 1)}-device sign-in limit. Sign out on another device or ask an administrator to raise the limit.`
             });
         }
         const token = jwt.sign({
@@ -453,14 +453,18 @@ const oauthLogin = async (req, res) => {
 };
 const logout = async (req, res) => {
     try {
-        const user = await User.findOneAndUpdate(
-            {
-                _id: req.user.userId,
-                activeSessionId: req.user.sessionId
-            },
-            { $set: { activeSessionId: null, lastSeenAt: null } },
+        let user = await User.findOneAndUpdate(
+            { _id: req.user.userId, activeSessionIds: req.user.sessionId },
+            { $pull: { activeSessionIds: req.user.sessionId }, $set: { lastSeenAt: null } },
             { returnDocument: "after" }
         );
+        if (!user) {
+            user = await User.findOneAndUpdate(
+                { _id: req.user.userId, activeSessionId: req.user.sessionId },
+                { $set: { activeSessionId: null, lastSeenAt: null } },
+                { returnDocument: "after" }
+            );
+        }
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -522,6 +526,7 @@ const resetPasswordPrototype = async (req, res) => {
         user.password = await bcrypt.hash(newPassword, 10);
         // Anyone signed in with the old password is signed out.
         user.activeSessionId = null;
+        user.activeSessionIds = [];
         await user.save();
         return res.status(200).json({
             success: true,

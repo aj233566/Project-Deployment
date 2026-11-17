@@ -28,6 +28,16 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: null,
         },
+        activeSessionIds: {
+            type: [String],
+            default: [],
+        },
+        maxConcurrentSessions: {
+            type: Number,
+            min: 1,
+            max: 20,
+            default: null,
+        },
         // Last time this person's browser said "I am here" while the page was open (presence heartbeat). Null when they left or logged out.
         lastSeenAt: {
             type: Date,

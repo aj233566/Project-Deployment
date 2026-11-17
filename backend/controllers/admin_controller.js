@@ -203,11 +203,32 @@ const rejectAuthority = async (req, res) => {
 const MANAGEABLE_ROLES = ["citizen", "authority"];
 const CONTROLLED_ROLES = [...MANAGEABLE_ROLES, "admin"];
 const ACCOUNT_STATUSES = ["active", "locked", "banned"];
+const activeSessionCountOf = (user) => {
+    const sessions = Array.isArray(user.activeSessionIds) ? user.activeSessionIds : [];
+    return sessions.length + (user.activeSessionId && !sessions.includes(user.activeSessionId) ? 1 : 0);
+};
 const safeAccount = (user) => {
     const account = user.toObject ? user.toObject() : { ...user };
     delete account.password;
     delete account.activeSessionId;
+    delete account.activeSessionIds;
+    account.activeSessionCount = activeSessionCountOf(user);
+    account.maxConcurrentSessions = user.maxConcurrentSessions || (user.role === "admin" ? 3 : 1);
     return account;
+};
+const getOwnSessionLimit = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId).select("role maxConcurrentSessions activeSessionId activeSessionIds");
+        if (!user) return res.status(404).json({ success: false, message: "Administrator account not found." });
+        return res.status(200).json({
+            success: true,
+            maxConcurrentSessions: user.maxConcurrentSessions || 3,
+            activeSessionCount: activeSessionCountOf(user)
+        });
+    } catch (error) {
+        console.error("Admin session settings error:", error.message);
+        return res.status(500).json({ success: false, message: "Unable to load session settings." });
+    }
 };
 const getManagedAccounts = async (req, res) => {
     try {
@@ -230,7 +251,7 @@ const getManagedAccounts = async (req, res) => {
             filter.accountStatus = status || { $ne: "deleted" };
         }
         const accounts = await User.find(filter)
-            .select("-password -activeSessionId")
+            .select("-password")
             .sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,
@@ -249,7 +270,7 @@ const forceLogoutAccount = async (req, res) => {
                 role: { $in: CONTROLLED_ROLES },
                 accountStatus: { $ne: "deleted" }
             },
-            { $set: { activeSessionId: null } },
+            { $set: { activeSessionId: null, activeSessionIds: [] } },
             { returnDocument: "after", projection: "-password -activeSessionId" }
         );
         if (!user) {
@@ -283,6 +304,7 @@ const setManagedAccountStatus = async (req, res) => {
                     accountStatusUpdatedAt: new Date(),
                     accountStatusUpdatedBy: req.user.userId,
                     activeSessionId: null,
+                    activeSessionIds: [],
                     ...(status === "active" ? { failedLoginAttempts: 0 } : {})
                 }
             },
@@ -306,41 +328,53 @@ const setManagedAccountStatus = async (req, res) => {
         });
     }
 };
-const softDeleteAccount = async (req, res) => {
+const setSessionLimit = async (req, res) => {
     try {
-        const { reason = "" } = req.body || {};
-        if (typeof reason !== "string" || reason.length > 500) {
-            return res.status(400).json({ success: false, message: "Reason must be under 500 characters." });
+        const maxConcurrentSessions = Number(req.body?.maxConcurrentSessions);
+        if (!Number.isInteger(maxConcurrentSessions) || maxConcurrentSessions < 1 || maxConcurrentSessions > 20) {
+            return res.status(400).json({ success: false, message: "Choose a whole-number device limit from 1 to 20." });
         }
-        const user = await User.findOneAndUpdate(
-            {
-                _id: req.params.id,
-                role: { $in: MANAGEABLE_ROLES },
-                accountStatus: { $ne: "deleted" }
-            },
-            {
-                $set: {
-                    accountStatus: "deleted",
-                    accountStatusReason: reason.trim(),
-                    accountStatusUpdatedAt: new Date(),
-                    accountStatusUpdatedBy: req.user.userId,
-                    activeSessionId: null
-                }
-            },
-            { returnDocument: "after", projection: "-password -activeSessionId" }
-        );
+        const targetId = req.params.id === "me" ? req.user.userId : req.params.id;
+        const user = await User.findOneAndUpdate({
+            _id: targetId,
+            role: { $in: CONTROLLED_ROLES },
+            accountStatus: { $ne: "deleted" }
+        }, { $set: { maxConcurrentSessions } }, {
+            returnDocument: "after",
+            projection: "-password -activeSessionId -activeSessionIds"
+        });
         if (!user) {
-            return res.status(404).json({ success: false, message: "Citizen or authority account not found." });
+            return res.status(404).json({ success: false, message: "Account not found." });
         }
         return res.status(200).json({
             success: true,
-            message: "Account soft-deleted. Existing incident records were preserved."
+            message: `Simultaneous device limit set to ${maxConcurrentSessions}.`,
+            account: safeAccount(user)
         });
     } catch (error) {
-        console.error("Admin soft delete error:", error.message);
+        console.error("Admin session limit error:", error.message);
         return res.status(error.name === "CastError" ? 404 : 500).json({
             success: false,
-            message: error.name === "CastError" ? "Account not found." : "Unable to delete account."
+            message: error.name === "CastError" ? "Account not found." : "Unable to update device limit."
+        });
+    }
+};
+const permanentlyDeleteAccount = async (req, res) => {
+    try {
+        const deleted = await User.findOneAndDelete({
+            _id: { $eq: req.params.id, $ne: req.user.userId },
+            role: { $in: CONTROLLED_ROLES }
+        });
+        if (!deleted) return res.status(404).json({ success: false, message: "Account not found or cannot delete your own administrator account." });
+        return res.status(200).json({
+            success: true,
+            message: "Account permanently deleted. Operational records linked to this account were preserved."
+        });
+    } catch (error) {
+        console.error("Admin account deletion error:", error.message);
+        return res.status(error.name === "CastError" ? 404 : 500).json({
+            success: false,
+            message: error.name === "CastError" ? "Account not found." : "Unable to permanently delete account."
         });
     }
 };
@@ -350,8 +384,10 @@ module.exports = {
     getAllAuthorities,
     approveAuthority,
     rejectAuthority,
+    getOwnSessionLimit,
     getManagedAccounts,
     forceLogoutAccount,
     setManagedAccountStatus,
-    softDeleteAccount
+    setSessionLimit,
+    permanentlyDeleteAccount
 };

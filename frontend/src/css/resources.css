@@ -171,8 +171,8 @@
   color: var(--text-primary);
 }
 .filter-chip-btn.active {
-  color: #d6e4e8;
-  background: var(--info-bg, rgba(79, 124, 138, 0.12));
+  color: var(--accent-contrast);
+  background: var(--ui-accent);
   border-color: var(--info, #4f7c8a);
 }
 .resource-search-wrapper {

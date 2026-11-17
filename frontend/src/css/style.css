@@ -21,9 +21,9 @@
   --safe: var(--risk-low);
   --safe-bg: color-mix(in srgb, var(--risk-low) 14%, var(--paper));
   --safe-border: var(--risk-low);
-  --info: var(--slate);
-  --info-bg: color-mix(in srgb, var(--slate) 10%, var(--paper));
-  --info-border: var(--slate);
+  --info: var(--ui-accent);
+  --info-bg: color-mix(in srgb, var(--ui-accent) 10%, var(--paper));
+  --info-border: var(--ui-accent);
   --text: var(--ink);
   --text-primary: var(--ink);
   --text-secondary: var(--slate);
@@ -119,6 +119,29 @@ body {
 .auth-card-header {
     margin-bottom: 28px;
 }
+.auth-card-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 9px;
+}
+.auth-card-toolbar .section-label { margin: 0; }
+.auth-theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+.auth-theme-toggle:hover { border-color: var(--info); background: var(--hover); }
+.auth-theme-toggle:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
 .section-label {
     display: inline-block;
     margin-bottom: 9px;
@@ -188,17 +211,17 @@ body {
 .oauth-google-placeholder {
     position: relative;
     padding-left: 58px;
-    background: #131314;
-    border-color: #8e918f;
-    color: #fff;
+    background: var(--bg-secondary);
+    border-color: var(--border);
+    color: var(--text-primary);
     font-weight: 600;
 }
 .oauth-microsoft-button {
     position: relative;
     padding-left: 58px;
-    background: #131314;
-    border-color: #8e918f;
-    color: #fff;
+    background: var(--bg-secondary);
+    border-color: var(--border);
+    color: var(--text-primary);
 }
 .google-mark {
     position: absolute;
@@ -218,8 +241,8 @@ body {
     inset: 0;
 }
 .oauth-microsoft-button:hover:not(:disabled) {
-    background: #202124;
-    border-color: #a5a7a6;
+    background: var(--surface-elevated);
+    border-color: var(--info);
 }
 .oauth-google-placeholder:hover:not(:disabled),
 .oauth-fallback-button:hover:not(:disabled) {
@@ -717,6 +740,43 @@ select.auth-input option {
     color: var(--cascade-text);
     font-size: 1.415rem;
     font-weight: 600;
+}
+.admin-device-limit,
+.admin-account-device-limit {
+    align-items: center;
+    color: var(--cascade-text-secondary);
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.55rem;
+    font-size: 0.9rem;
+}
+.admin-device-limit {
+    background: var(--cascade-bg-secondary);
+    border: 1px solid var(--cascade-border);
+    border-radius: var(--cascade-radius);
+    padding: 0.45rem 0.6rem;
+}
+.admin-device-limit .form-select,
+.admin-account-device-limit .form-select {
+    background-color: var(--cascade-card);
+    border-color: var(--cascade-border);
+    color: var(--cascade-text);
+    width: auto;
+    min-width: 4.25rem;
+}
+.admin-device-limit .form-select option,
+.admin-account-device-limit .form-select option {
+    background: var(--cascade-card);
+    color: var(--cascade-text);
+}
+.admin-device-limit small,
+.admin-account-device-limit small {
+    color: var(--cascade-text-muted);
+    flex-basis: 100%;
+    font-size: 0.78rem;
+}
+.admin-account-device-limit {
+    margin-top: 0.65rem;
 }
 .cascade-stat-card {
     background: var(--cascade-card);
