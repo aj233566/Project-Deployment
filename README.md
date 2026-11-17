@@ -1220,6 +1220,46 @@ ADMIN_PASSWORD=replace-with-a-strong-password
 External API keys should be stored server-side and should not be exposed
 through public frontend environment variables.
 
+### Email OTP setup with Gmail OAuth
+
+The backend sends OTP messages through Gmail SMTP using OAuth2. Create an
+OAuth client in Google Cloud, enable the Gmail API, and authorize the Gmail
+account that will send the messages with the `https://mail.google.com/` scope.
+To get a refresh token, add
+`https://developers.google.com/oauthplayground` as an authorized redirect URI
+for the OAuth client, then open the [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground/).
+In its settings, enable **Use your own OAuth credentials**, set OAuth flow to
+**Server-side** and access type to **Offline**, enter the client ID and secret,
+authorize the `https://mail.google.com/` scope, then exchange the code for
+tokens. Set the resulting refresh token and the other backend-only values in
+`backend/.env` (never in `frontend/.env`):
+
+```env
+GMAIL_OAUTH_USER=your-sender@gmail.com
+GMAIL_OAUTH_CLIENT_ID=your-google-oauth-client-id
+GMAIL_OAUTH_CLIENT_SECRET=your-google-oauth-client-secret
+GMAIL_OAUTH_REFRESH_TOKEN=your-google-refresh-token
+```
+
+The `From` address is the authorized `GMAIL_OAUTH_USER`. Keep the client
+secret and refresh token private. For a Google OAuth consent screen in
+Testing status, refresh tokens for Gmail scopes expire after 7 days; move the
+consent screen to Production for a persistent deployment. Google may require
+OAuth app verification for the full Gmail scope, and Nodemailer cautions that
+Gmail can block automated SMTP activity it considers suspicious. Review
+[Nodemailer's Gmail OAuth guide](https://nodemailer.com/guides/using-gmail),
+[Google's Gmail SMTP OAuth scope requirements](https://developers.google.com/workspace/gmail/imap/xoauth2-protocol),
+and [Google's refresh-token rules](https://developers.google.com/identity/protocols/oauth2).
+The OAuth Playground revokes its own refresh tokens after 24 hours unless you
+select your own OAuth client credentials.
+Restart the backend after saving credentials. If Gmail OAuth is not
+configured, OTP requests return a setup error and no code is sent.
+
+OTP codes expire after 10 minutes, allow five verification attempts, and are
+limited to five sends per account and OTP purpose per hour. The supported
+purposes are email-code login, password reset/change, unlocking an account
+locked by failed password attempts, and signing out all devices.
+
 Example categories may include:
 
 ``` env
@@ -2678,7 +2718,7 @@ Checked by an audit script in the browser (text size, clipped text, overlaps, ic
 Security (backend), found by those tests:
 - `/api/resources` had **no sign-in check at all**, including create and update. Now: signed in to read (all roles), authority or admin to create or change.
 - `/api/notifications` was open: anyone could read them, **send a broadcast to all citizens** and mark everything read. Now: signed in for everything, authority or admin only for `/broadcast`; the broadcast input is validated (400 instead of a server error).
-- `POST /api/auth/reset-password-prototype` changed any account's password knowing only the e-mail. Now: never for authority or admin accounts, off in production unless `ALLOW_PASSWORD_RESET_PROTOTYPE=true`, and the old login session ends after a reset. A real e-mailed link or code is still needed before this is safe for citizens too.
+- Account recovery and session revocation use expiring email OTP codes. Configure SMTP on the backend before using these flows.
 - New test `route_access.test.js`: every route of resources, nearby, affected areas, presence, red zones, relocation sites, habitations, notifications, alerts, relocation priority and feeds must pass the sign-in check.
 - Still open by an existing decision (not changed): `GET /api/emergency-priority` allows anonymous reads (a test in `emergency_route_auth.test.js` records this as a contract) and `GET /api/incidents/evidence/:fileId` needs no sign-in (images are loaded by plain `<img>` tags). Both should be reviewed by the team.
 

@@ -1,11 +1,12 @@
-const { checkPrototypeReset } = require("../services/passwordResetPolicy");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../models/user");
+const OtpChallenge = require("../models/otp_challenge");
+const { hasEmailConfig, sendOtpEmail } = require("../services/email_service");
 const { verifyIdentityToken } = require("../services/oauth_identity");
 const accountStatusMessage = (status) => ({
-    locked: "This account is locked after too many incorrect passwords. Contact an administrator to unlock it.",
+    locked: "This account is locked after too many incorrect passwords. Use email verification to unlock it.",
     blocked: "This account is locked. Contact an administrator to unlock it.",
     banned: "This account is banned and cannot sign in.",
     deleted: "This account is no longer available."
@@ -484,30 +485,25 @@ const logout = async (req, res) => {
         });
     }
 };
-const resetPasswordPrototype = async (req, res) => {
+const OTP_PURPOSES = new Set(["login", "password_reset", "unlock", "revoke_sessions"]);
+const digestOtp = (userId, purpose, code) => crypto
+    .createHmac("sha256", process.env.JWT_SECRET || "")
+    .update(`${userId}:${purpose}:${code}`)
+    .digest("hex");
+
+const requestOtp = async (req, res) => {
     try {
-        const email = String(req.body.email || "")
-            .trim()
-            .toLowerCase();
-        const newPassword = String(req.body.newPassword || "");
-        if (!email || !newPassword) {
-            return res.status(400).json({
-                success: false,
-                message: "Email and new password are required."
-            });
+        const email = String(req.body.email || "").trim().toLowerCase();
+        const purpose = String(req.body.purpose || "");
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !OTP_PURPOSES.has(purpose)) {
+            return res.status(400).json({ success: false, message: "Enter a valid email and OTP purpose." });
         }
-        if (newPassword.length < 6 || newPassword.length > 128) {
-            return res.status(400).json({
-                success: false,
-                message: "Password must be between 6 and 128 characters."
-            });
+        if (!process.env.JWT_SECRET) {
+            return res.status(503).json({ success: false, message: "Account verification is not configured on this server." });
         }
-        const switchedOff = checkPrototypeReset({});
-        if (!switchedOff.allowed) {
-            return res.status(switchedOff.status).json({
-                success: false,
-                message: switchedOff.message
-            });
+        // Fail before checking whether an address belongs to an account so setup errors don't reveal account existence.
+        if (!hasEmailConfig()) {
+            return res.status(503).json({ success: false, message: "Email verification is not configured on this server yet." });
         }
         const user = await User.findOne({ email });
         if (!user) {
@@ -526,18 +522,20 @@ const resetPasswordPrototype = async (req, res) => {
         user.password = await bcrypt.hash(newPassword, 10);
         // Anyone signed in with the old password is signed out.
         user.activeSessionId = null;
-        user.activeSessionIds = [];
         await user.save();
         return res.status(200).json({
             success: true,
-            message: "Password updated successfully."
+            message: "Login successful.",
+            token,
+            user: {
+                id: claimedUser._id, name: claimedUser.name, email: claimedUser.email, phone: claimedUser.phone,
+                role: claimedUser.role, location: claimedUser.location, department: claimedUser.department,
+                designation: claimedUser.designation, employeeId: claimedUser.employeeId, authorityStatus: claimedUser.authorityStatus
+            }
         });
     } catch (error) {
-        console.error("Password reset error:", error.message);
-        return res.status(500).json({
-            success: false,
-            message: "Unable to reset password. Please try again."
-        });
+        console.error("OTP verification error:", error.message);
+        return res.status(500).json({ success: false, message: "Unable to verify the code. Please try again." });
     }
 };
 module.exports = {
@@ -545,5 +543,6 @@ module.exports = {
     login,
     oauthLogin,
     logout,
-    resetPasswordPrototype
+    requestOtp,
+    verifyOtp
 };
