@@ -1,6 +1,6 @@
 .sentry-page {
   min-height: 100%;
-  color: #e7edf5;
+  color: var(--text-primary);
 }
 .habitations-page {
   flex: 1 0 auto;
@@ -9,10 +9,10 @@
   flex-direction: column;
 }
 .sentry-page .text-muted {
-  color: #a4b0bf !important;
+  color: var(--text-secondary) !important;
 }
 .sentry-eyebrow {
-  color: #65c6d4;
+  color: var(--ui-accent);
   font-size: 1.179rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -20,8 +20,8 @@
 .sentry-panel,
 .sentry-state,
 .sentry-table-wrap {
-  background: #111d2b;
-  border: 1px solid #28394b;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 0.75rem;
   padding: 1rem;
 }
@@ -31,11 +31,11 @@
 }
 .sentry-page .table {
   --bs-table-bg: transparent;
-  --bs-table-color: #e7edf5;
-  --bs-table-border-color: #28394b;
+  --bs-table-color: var(--text-primary);
+  --bs-table-border-color: var(--border);
 }
 .sentry-page .table thead {
-  color: #a4b0bf;
+  color: var(--text-secondary);
   text-transform: uppercase;
   font-size: 1.179rem;
 }

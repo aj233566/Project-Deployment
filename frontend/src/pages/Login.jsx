@@ -1,17 +1,30 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
 import { apiBaseUrl } from "../services/api";
+import { fetchWithTimeout } from "../services/fetchWithTimeout";
 import { setSession } from "../context/session";
+import { applyTheme, getSavedTheme } from "../utils/theme.js";
 import OAuthButtons from "../components/OAuthButtons";
 function Login() {
   const navigate = useNavigate();
+  const [isDark, setIsDark] = useState(() => getSavedTheme() === "dark");
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [loginMethod, setLoginMethod] = useState("password");
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
+  const toggleTheme = () => {
+    const nextTheme = isDark ? "light" : "dark";
+    applyTheme(nextTheme);
+    setIsDark(nextTheme === "dark");
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((previous) => ({
@@ -60,6 +73,48 @@ function Login() {
       setLoading(false);
     }
   };
+  const handleOtpRequest = async () => {
+    setError("");
+    if (!formData.email) return setError("Enter your email address first.");
+    try {
+      setLoading(true);
+      const response = await fetchWithTimeout(`${apiBaseUrl}/auth/otp/request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, purpose: "login" }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to send a code.");
+      setOtpRequested(true);
+      setNotice(data.message || "If the account is eligible, a code will be sent shortly.");
+    } catch (requestError) {
+      setError(requestError.message || "Unable to send a code. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleOtpLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      setLoading(true);
+      const response = await fetchWithTimeout(`${apiBaseUrl}/auth/otp/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, purpose: "login", code: otp }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to sign in with this code.");
+      setSession(data.token, data.user);
+      if (data.user.role === "admin") navigate("/admin", { replace: true });
+      else if (data.user.role === "authority" && data.user.authorityStatus === "verified") navigate("/dashboard/authority", { replace: true });
+      else navigate("/dashboard/citizen", { replace: true });
+    } catch (requestError) {
+      setError(requestError.message || "Unable to sign in. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleProviderCredential = async (provider, credential) => {
     setError("");
     setLoading(true);
@@ -94,7 +149,7 @@ function Login() {
         <div className="row min-vh-100 align-items-center justify-content-center">
           <div className="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
             <div className="auth-brand text-center">
-              <div className="brand-mark" aria-hidden="true"><img src="/senetry-logo-transparent.svg" alt="" /></div>
+              <div className="brand-mark" aria-hidden="true"><img className="logo-light" src="/senetry-logo-transparent.svg" alt="" /><img className="logo-dark" src="/senetry-logo-dark.svg" alt="" /></div>
 
               <h1>SENETRY</h1>
 
@@ -107,7 +162,19 @@ function Login() {
 
             <section className="auth-card">
               <div className="auth-card-header">
-                <span className="section-label">SECURE ACCESS</span>
+                <div className="auth-card-toolbar">
+                  <span className="section-label">SECURE ACCESS</span>
+                  <button
+                    type="button"
+                    className="auth-theme-toggle"
+                    onClick={toggleTheme}
+                    aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+                    aria-pressed={isDark}
+                    title={`Switch to ${isDark ? "light" : "dark"} mode`}
+                  >
+                    {isDark ? <Sun aria-hidden="true" size={19} /> : <Moon aria-hidden="true" size={19} />}
+                  </button>
+                </div>
 
                 <h2>Welcome back</h2>
 
@@ -121,12 +188,17 @@ function Login() {
                   <span>{error}</span>
                 </div>
               )}
+              {notice && <div className="auth-message" role="status">{notice}</div>}
 
               <div className="auth-divider auth-divider-alt">
                 <span>USE YOUR EMAIL</span>
               </div>
 
-              <form onSubmit={handleSubmit}>
+              <div className="d-flex gap-2 mb-3" role="group" aria-label="Sign-in method">
+                <button type="button" className="secondary-auth-button" aria-pressed={loginMethod === "password"} onClick={() => { setLoginMethod("password"); setOtpRequested(false); setError(""); setNotice(""); }}>Password</button>
+                <button type="button" className="secondary-auth-button" aria-pressed={loginMethod === "otp"} onClick={() => { setLoginMethod("otp"); setError(""); setNotice(""); }}>Email code</button>
+              </div>
+              <form onSubmit={loginMethod === "password" ? handleSubmit : handleOtpLogin}>
                 <div className="mb-3">
                   <label htmlFor="login-email" className="form-label">
                     Email address
@@ -145,7 +217,16 @@ function Login() {
                   />
                 </div>
 
-                <div className="mb-3">
+                {loginMethod === "otp" && <div className="mb-3">
+                  <label htmlFor="login-otp" className="form-label">Email verification code</label>
+                  <div className="d-flex gap-2">
+                    <input id="login-otp" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} className="form-control auth-input" placeholder="6-digit code" value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} autoComplete="one-time-code" required={otpRequested} disabled={!otpRequested} />
+                    <button type="button" className="secondary-auth-button" onClick={handleOtpRequest} disabled={loading}>{otpRequested ? "Resend" : "Send code"}</button>
+                  </div>
+                  <small className="d-block mt-2">The code expires after 10 minutes.</small>
+                </div>}
+
+                {loginMethod === "password" && <div className="mb-3">
                   <div className="d-flex justify-content-between align-items-center">
                     <label htmlFor="login-password" className="form-label">
                       Password
@@ -180,13 +261,13 @@ function Login() {
                       {showPassword ? "HIDE" : "SHOW"}
                     </button>
                   </div>
-                </div>
+                </div>}
 
                 <div className="remember-row mb-4">
                   <span>You will remain signed in until you log out.</span>
                 </div>
 
-                <button
+                {loginMethod === "password" && <button
                   type="submit"
                   className="auth-submit"
                   disabled={loading}
@@ -202,11 +283,14 @@ function Login() {
                   ) : (
                     "Sign in"
                   )}
-                </button>
+                </button>}
+                {loginMethod === "otp" && <button type="submit" className="auth-submit" disabled={loading || !otpRequested || otp.length !== 6}>
+                  {loading ? "Verifying..." : "Sign in with email code"}
+                </button>}
               </form>
 
               <div className="oauth-heading">Or sign in with</div>
-              <OAuthButtons onCredential={handleProviderCredential} disabled={loading} />
+              <OAuthButtons onCredential={handleProviderCredential} disabled={loading} googleTheme={isDark ? "filled_black" : "outline"} />
 
               <div className="auth-divider">
                 <span>NEW TO SENETRY?</span>

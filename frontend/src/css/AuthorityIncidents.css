@@ -129,8 +129,8 @@
   padding: 0.45rem 0.8rem;
   border: 1px solid var(--line);
   border-radius: 0.4rem;
-  background: transparent;
-  color: #b8c2c8;
+  background: var(--surface-elevated);
+  color: var(--text-secondary);
   font-size: 1.226rem;
   font-weight: 600;
   cursor: pointer;
@@ -140,13 +140,16 @@
     color 0.2s ease;
 }
 .authority-filter-button:hover {
-  border-color: #4f7c8a;
-  color: #ffffff;
+  border-color: var(--ui-accent);
+  background: color-mix(in srgb, var(--ui-accent) 7%, var(--surface));
+  color: var(--ink);
 }
 .authority-filter-active {
-  border-color: #4f7c8a;
-  background: var(--border);
-  color: #ffffff;
+  border: 2px solid var(--ui-accent);
+  background: color-mix(in srgb, var(--ui-accent) 20%, var(--surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent) 20%, transparent);
+  color: var(--ink);
+  font-weight: 700;
 }
 .authority-incident-table-card {
   width: 100%;
@@ -208,7 +211,7 @@
   margin: 0;
   border-collapse: collapse;
   background: var(--surface);
-  color: #c8d0d5;
+  color: var(--text-primary, var(--ink));
 }
 .authority-incident-table th {
   padding: 0.8rem 0.75rem;
@@ -224,7 +227,7 @@
   padding: 0.8rem 0.75rem;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
-  color: #c8d0d5;
+  color: var(--text-primary, var(--ink));
   font-size: 1.259rem;
   vertical-align: middle;
 }
@@ -236,19 +239,19 @@
 }
 .authority-incident-id {
   max-width: 9rem;
-  color: #ffffff !important;
+  color: var(--text-primary, var(--ink)) !important;
   font-weight: 600;
   overflow-wrap: anywhere;
   word-break: break-all;
 }
 .authority-incident-type {
-  color: #d9e0e4;
+  color: var(--text-primary, var(--ink));
   font-weight: 500;
 }
 .authority-incident-location {
   display: block;
   max-width: 100%;
-  color: #d9e0e4;
+  color: var(--text-primary, var(--ink));
   font-weight: 500;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -259,7 +262,7 @@
   white-space: nowrap;
 }
 .authority-response-team {
-  color: #c8d0d5;
+  color: var(--text-secondary, var(--slate));
 }
 .authority-severity-badge {
   display: inline-flex;

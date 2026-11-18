@@ -58,7 +58,7 @@ function Navbar() {
 
         <NavLink className="navbar-brand fw-bold" to={dashboardPath} onClick={closeMenu}>
           <span className="senetry-navbar-brand" aria-label="SENETRY disaster decision support">
-            <span className="senetry-navbar-mark" aria-hidden="true"><img src="/senetry-logo-transparent.svg" alt="" /></span>
+            <span className="senetry-navbar-mark" aria-hidden="true"><img className="logo-light" src="/senetry-logo-transparent.svg" alt="" /><img className="logo-dark" src="/senetry-logo-dark.svg" alt="" /></span>
             <span className="senetry-navbar-name">SENETRY</span>
           </span>
         </NavLink>

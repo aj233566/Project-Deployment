@@ -45,7 +45,7 @@
   background-color: var(--bg-primary);
   z-index: 10;
 }
-.gis-base-osmdark {
+.dark .gis-base-osmdark {
   filter: invert(1) hue-rotate(180deg) brightness(1.15) contrast(1.05) saturate(0.6);
 }
 .leaflet-popup-content-wrapper {

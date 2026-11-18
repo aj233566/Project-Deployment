@@ -37,7 +37,7 @@ function getMicrosoftClient() {
   }
   return microsoftClientPromise;
 }
-export default function OAuthButtons({ onCredential, disabled = false }) {
+export default function OAuthButtons({ onCredential, disabled = false, googleTheme = "outline" }) {
   const googleHost = useRef(null);
   const callbackRef = useRef(onCredential);
   const microsoftInteractionInProgress = useRef(false);
@@ -51,6 +51,7 @@ export default function OAuthButtons({ onCredential, disabled = false }) {
     if (!googleClientId || !googleHost.current) return undefined;
     let active = true;
     let buttonCheckTimer;
+    let resizeObserver;
     loadGoogleScript().then(() => {
       if (!active || !googleHost.current) return;
       window.google.accounts.id.initialize({
@@ -59,16 +60,26 @@ export default function OAuthButtons({ onCredential, disabled = false }) {
           if (response.credential) callbackRef.current("google", response.credential);
         },
       });
-      googleHost.current.replaceChildren();
-      window.google.accounts.id.renderButton(googleHost.current, {
-        type: "standard",
-        theme: "outline_dark",
-        size: "large",
-        text: "signin_with",
-        shape: "rectangular",
-        logo_alignment: "left",
-        width: Math.min(360, googleHost.current.clientWidth || 360),
-      });
+      let renderedWidth = 0;
+      const renderGoogleButton = () => {
+        if (!active || !googleHost.current) return;
+        const width = Math.min(360, Math.floor(googleHost.current.clientWidth || 360));
+        if (width === renderedWidth) return;
+        renderedWidth = width;
+        googleHost.current.replaceChildren();
+        window.google.accounts.id.renderButton(googleHost.current, {
+          type: "standard",
+          theme: googleTheme,
+          size: "large",
+          text: "signin_with",
+          shape: "rectangular",
+          logo_alignment: "left",
+          width,
+        });
+      };
+      resizeObserver = new ResizeObserver(renderGoogleButton);
+      resizeObserver.observe(googleHost.current);
+      renderGoogleButton();
       buttonCheckTimer = window.setTimeout(() => {
         if (!active || !googleHost.current) return;
         if (googleHost.current.querySelector("iframe")) {
@@ -83,8 +94,9 @@ export default function OAuthButtons({ onCredential, disabled = false }) {
     return () => {
       active = false;
       if (buttonCheckTimer) window.clearTimeout(buttonCheckTimer);
+      resizeObserver?.disconnect();
     };
-  }, []);
+  }, [googleTheme]);
   const handleMicrosoft = useCallback(async () => {
     if (!microsoftClientId || microsoftInteractionInProgress.current) return;
     microsoftInteractionInProgress.current = true;
@@ -116,21 +128,25 @@ export default function OAuthButtons({ onCredential, disabled = false }) {
   return (
     <div className="oauth-options">
       {googleClientId && (
-        <div className={`oauth-google-host${disabled || !googleReady ? " oauth-disabled" : ""}`}>
-          <div ref={googleHost} aria-label="Sign in with Google" />
+        <div className={`oauth-google-host${googleTheme === "filled_black" ? " oauth-google-dark" : " oauth-google-light"}${disabled || !googleReady ? " oauth-disabled" : ""}`}>
+          <div ref={googleHost} className="oauth-google-frame" aria-label="Sign in with Google" />
+          {googleReady && <span className="oauth-google-visual" aria-hidden="true">
+            <span className="google-mark"><img src="/google-g-logo-gradient.png" alt="" /></span>
+            <span className="oauth-google-label">Sign in with Google</span>
+          </span>}
           {!googleReady && <button type="button" className="oauth-fallback-button" disabled>Loading Google sign-in…</button>}
         </div>
       )}
       {!googleClientId && (
         <button type="button" className="oauth-google-placeholder" disabled>
-          <span className="google-mark" aria-hidden="true">G</span>
+          <span className="google-mark" aria-hidden="true"><img src="/google-g-logo-gradient.png" alt="" /></span>
           Sign in with Google
         </button>
       )}
       {microsoftClientId && (
         <button
           type="button"
-          className="oauth-microsoft-button"
+          className={`oauth-microsoft-button${googleTheme === "filled_black" ? " oauth-microsoft-dark" : " oauth-microsoft-light"}`}
           onClick={handleMicrosoft}
           disabled={disabled || busy}
         >
@@ -139,7 +155,7 @@ export default function OAuthButtons({ onCredential, disabled = false }) {
         </button>
       )}
       {!microsoftClientId && (
-        <button type="button" className="oauth-microsoft-button" disabled>
+        <button type="button" className={`oauth-microsoft-button${googleTheme === "filled_black" ? " oauth-microsoft-dark" : " oauth-microsoft-light"}`} disabled>
           <span className="microsoft-mark" aria-hidden="true"><i /><i /><i /><i /></span>
           Sign in with Microsoft
         </button>

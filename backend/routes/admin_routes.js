@@ -6,10 +6,12 @@ const {
     getAllAuthorities,
     approveAuthority,
     rejectAuthority,
+    getOwnSessionLimit,
     getManagedAccounts,
     forceLogoutAccount,
     setManagedAccountStatus,
-    softDeleteAccount
+    setSessionLimit,
+    permanentlyDeleteAccount
 } = require("../controllers/admin_controller");
 const {
     protect,
@@ -34,9 +36,11 @@ router.get(
     getAllAuthorities
 );
 router.get("/accounts", protect, authorizeAdmin, getManagedAccounts);
+router.get("/accounts/me/session-limit", protect, authorizeAdmin, getOwnSessionLimit);
+router.patch("/accounts/:id/session-limit", protect, authorizeAdmin, setSessionLimit);
 router.post("/accounts/:id/force-logout", protect, authorizeAdmin, forceLogoutAccount);
 router.patch("/accounts/:id/status", protect, authorizeAdmin, setManagedAccountStatus);
-router.delete("/accounts/:id", protect, authorizeAdmin, softDeleteAccount);
+router.delete("/accounts/:id", protect, authorizeAdmin, permanentlyDeleteAccount);
 router.patch(
     "/authorities/:id/approve",
     protect,

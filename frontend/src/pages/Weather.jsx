@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { analyzeRisk } from "../services/riskApi";
 import { sentryApi } from "../services/sentryApi";
+import indiaStates from "../data/gis/indiaStates.js";
 import "../css/Weather.css";
 function getWeatherCondition(weatherCode) {
   if (weatherCode == null) return "Unknown";
@@ -15,48 +16,24 @@ function getWeatherCondition(weatherCode) {
   if ([95, 96, 99].includes(weatherCode)) return "Thunderstorm";
   return "Unknown";
 }
-const NORTHEAST_STATES = [
-  {
-    name: "Arunachal Pradesh",
-    latitude: 27.0844,
-    longitude: 93.6053,
-  },
-  {
-    name: "Assam",
-    latitude: 26.1445,
-    longitude: 91.7362,
-  },
-  {
-    name: "Manipur",
-    latitude: 24.817,
-    longitude: 93.9368,
-  },
-  {
-    name: "Meghalaya",
-    latitude: 25.467,
-    longitude: 91.3662,
-  },
-  {
-    name: "Mizoram",
-    latitude: 23.7271,
-    longitude: 92.7176,
-  },
-  {
-    name: "Nagaland",
-    latitude: 25.6751,
-    longitude: 94.1086,
-  },
-  {
-    name: "Tripura",
-    latitude: 23.8315,
-    longitude: 91.2868,
-  },
-  {
-    name: "Sikkim",
-    latitude: 27.3389,
-    longitude: 88.6065,
-  },
-];
+const MONITORED_REGIONS = [...indiaStates]
+  .map((region) => {
+    const referencePoint = region.capital || region.cities[0] || {
+      name: region.name,
+      lat: region.center[0],
+      lng: region.center[1],
+    };
+    return {
+      name: region.name,
+      kind: region.kind,
+      referenceName: referencePoint.name,
+      latitude: referencePoint.lat,
+      longitude: referencePoint.lng,
+    };
+  })
+  .sort((a, b) => a.name.localeCompare(b.name));
+const STATE_COUNT = MONITORED_REGIONS.filter((region) => region.kind === "state").length;
+const UNION_TERRITORY_COUNT = MONITORED_REGIONS.length - STATE_COUNT;
 function getWeatherIcon(weatherCode) {
   if (weatherCode == null) return "🌤️";
   if (weatherCode === 0) return "☀️";
@@ -100,13 +77,13 @@ function Weather() {
     async function loadRegionalWeather() {
       setLoading(true);
       setError("");
-      const weatherResults = new Array(NORTHEAST_STATES.length);
+      const weatherResults = new Array(MONITORED_REGIONS.length);
       let nextIndex = 0;
       const weatherWorker = async () => {
-        while (nextIndex < NORTHEAST_STATES.length) {
+        while (nextIndex < MONITORED_REGIONS.length) {
           const index = nextIndex;
           nextIndex += 1;
-          const state = NORTHEAST_STATES[index];
+          const state = MONITORED_REGIONS[index];
           try {
             const response = await sentryApi.getCurrentWeather(state.latitude, state.longitude);
             weatherResults[index] = {
@@ -130,48 +107,51 @@ function Weather() {
           }
         }
       };
-      await Promise.all(Array.from({ length: Math.min(4, NORTHEAST_STATES.length) }, weatherWorker));
+      await Promise.all(Array.from({ length: Math.min(4, MONITORED_REGIONS.length) }, weatherWorker));
       if (cancelled) return;
       setRegionalData(weatherResults);
       const successfulStates = weatherResults.filter(
         (state) => state.success && state.data,
       );
       if (successfulStates.length === 0) {
-        setError("Unable to load weather data for the monitored states.");
+        setError("Unable to load weather data for the monitored regions.");
       }
       setLoading(false);
 
-      // Risk analysis includes news and AI enrichment and can take longer than live weather.
-      // Update each state's card as its assessment arrives instead of blocking this page.
-      nextIndex = 0;
-      const riskWorker = async () => {
-        while (nextIndex < NORTHEAST_STATES.length) {
-          const index = nextIndex;
-          nextIndex += 1;
-          const state = NORTHEAST_STATES[index];
-          try {
-            const data = await analyzeRisk({
-              latitude: state.latitude,
-              longitude: state.longitude,
-              name: state.name,
-              disasterType: "multi_hazard",
-            });
-            if (cancelled) return;
-            setRegionalData((current) => current.map((item) => (
-              item.name === state.name ? { ...item, data, success: true, riskUnavailable: false } : item
-            )));
-          } catch (err) {
-            console.warn(`Risk analysis unavailable for ${state.name}; showing live weather:`, err.message);
-          }
-        }
-      };
-      await Promise.all(Array.from({ length: 3 }, riskWorker));
     }
     loadRegionalWeather();
     return () => {
       cancelled = true;
     };
   }, []);
+  const selectRegion = async (region) => {
+    setSelectedState(region.name);
+    if (!region.data || region.data.multiHazard || region.riskLoading) return;
+
+    setRegionalData((current) => current.map((item) => (
+      item.name === region.name ? { ...item, riskLoading: true, riskError: "" } : item
+    )));
+    try {
+      const assessment = await analyzeRisk({
+        latitude: region.latitude,
+        longitude: region.longitude,
+        name: region.name,
+        disasterType: "multi_hazard",
+      });
+      setRegionalData((current) => current.map((item) => (
+        item.name === region.name
+          ? { ...item, data: assessment, success: true, riskUnavailable: false, riskLoading: false }
+          : item
+      )));
+    } catch (riskError) {
+      console.warn(`Risk analysis unavailable for ${region.name}; showing live weather:`, riskError.message);
+      setRegionalData((current) => current.map((item) => (
+        item.name === region.name
+          ? { ...item, riskLoading: false, riskUnavailable: true, riskError: riskError.message }
+          : item
+      )));
+    }
+  };
   if (loading) {
     return (
       <main className="weather-page">
@@ -189,7 +169,7 @@ function Weather() {
 
         <div className="weather-loading">
           <div className="weather-spinner"></div>
-          <p>Fetching live weather and risk intelligence...</p>
+          <p>Fetching live weather across India...</p>
         </div>
       </main>
     );
@@ -229,7 +209,7 @@ function Weather() {
     (item) => item.name === selectedState,
   );
   const riskData = selectedStateData?.data || null;
-  if (!riskData) {
+  if (!selectedState || !riskData) {
     return (
       <main className="weather-page">
         <div className="weather-header">
@@ -237,7 +217,7 @@ function Weather() {
             <h2 className="weather-title">Weather & Early Warning</h2>
 
             <p className="weather-subtitle">
-              Live environmental monitoring across Northeast India
+              Live environmental monitoring across India
             </p>
           </div>
 
@@ -246,8 +226,10 @@ function Weather() {
 
         <div className="weather-section">
           <div className="weather-section-header">
-            <h2 className="weather-section-title">Choose a monitoring region</h2>
-            <p className="weather-section-subtitle">No location is selected by default. Select a regional reference point to review its available assessment.</p>
+            <h2 className="weather-section-title">Weather across India</h2>
+            <p className="weather-section-subtitle">
+              Live conditions for {STATE_COUNT} states and {UNION_TERRITORY_COUNT} union territories. Select a region to open its detailed forecast and risk assessment.
+            </p>
           </div>
           <div className="weather-section-body">
             <div className="row g-3">
@@ -255,18 +237,29 @@ function Weather() {
                 <div className="col-12 col-sm-6 col-lg-4 col-xl-3" key={state.name}>
                   <button
                     type="button"
-                    className="w-100 text-start border rounded p-3 h-100"
-                    onClick={() => state.data && setSelectedState(state.name)}
+                    className={`weather-region-card w-100 text-start border rounded p-3 h-100${state.data ? "" : " is-unavailable"}`}
+                    onClick={() => selectRegion(state)}
                     disabled={!state.data}
-                    style={{ background: "var(--weather-card-bg, #1d2529)", color: "inherit", cursor: state.data ? "pointer" : "not-allowed" }}
                   >
-                    <strong>{state.name}</strong>
-                    <div className="mt-2">{state.data?.multiHazard?.redZone || (state.riskUnavailable ? "Risk assessment updating" : "Data unavailable")}</div>
-                    <small className="text-muted">
-                      {Number.isFinite(state.data?.multiHazard?.compositeScore)
-                        ? `Decision-support index ${state.data.multiHazard.compositeScore}/100`
-                        : state.riskUnavailable ? "Live weather loaded; risk assessment is updating." : state.error || "No assessment data"}
-                    </small>
+                    <div className="weather-region-heading">
+                      <div>
+                        <strong>{state.name}</strong>
+                        <small>{state.referenceName}</small>
+                      </div>
+                      <span className={`weather-region-risk ${state.data?.multiHazard?.redZone ? getRiskClass(state.data.multiHazard.redZone) : "weather-impact-unknown"}`}>
+                        {state.data?.multiHazard?.redZone || (state.riskLoading ? "ASSESSING" : state.riskUnavailable ? "RISK OFFLINE" : state.data ? "SELECT FOR RISK" : "OFFLINE")}
+                      </span>
+                    </div>
+                    <div className="weather-region-current">
+                      <span className="weather-region-icon" aria-hidden="true">{getWeatherIcon(state.data?.weather?.weatherCode)}</span>
+                      <strong>{Number.isFinite(state.data?.weather?.temperature) ? `${state.data.weather.temperature}°C` : "--°C"}</strong>
+                      <span>{getWeatherCondition(state.data?.weather?.weatherCode)}</span>
+                    </div>
+                    <div className="weather-region-metrics">
+                      <span>Humidity <strong>{state.data?.weather?.humidity ?? "--"}%</strong></span>
+                      <span>Rain <strong>{state.data?.weather?.rain ?? state.data?.weather?.precipitation ?? "--"} mm</strong></span>
+                      <span>Risk index <strong>{Number.isFinite(state.data?.multiHazard?.compositeScore) ? `${state.data.multiHazard.compositeScore}/100` : state.riskLoading ? "Assessing" : "Select region"}</strong></span>
+                    </div>
                   </button>
                 </div>
               ))}
@@ -303,13 +296,23 @@ function Weather() {
             Regional data unavailable for: {regionalFailures.map((item) => item.name).join(", ")}.
           </div>
         )}
+        {selectedStateData?.riskLoading && (
+          <div className="alert alert-info mx-3 mt-3 mb-0" role="status">
+            Loading the multi-hazard assessment for {selectedState}. Current weather is available below.
+          </div>
+        )}
+        {selectedStateData?.riskUnavailable && (
+          <div className="alert alert-warning mx-3 mt-3 mb-0" role="status">
+            Risk assessment is currently unavailable for {selectedState}. Live weather is still shown.
+          </div>
+        )}
         <div className="weather-section-header">
           <h5 className="weather-section-title">
-            Northeast India Weather Overview
+            India Weather Overview
           </h5>
 
           <p className="weather-section-subtitle">
-            Live weather and explainable multi-hazard assessment across monitored states
+            Live weather and explainable multi-hazard assessment across all monitored regions
           </p>
         </div>
 
@@ -338,7 +341,7 @@ function Weather() {
                     className={`w-100 text-start border rounded p-3 h-100 ${
                       selectedState === state.name ? "border-primary" : ""
                     }`}
-                    onClick={() => setSelectedState(state.name)}
+                    onClick={() => selectRegion(state)}
                     style={{
                       background: "var(--weather-card-bg, #1d2529)",
                       color: "inherit",

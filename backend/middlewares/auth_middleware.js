@@ -41,7 +41,11 @@ const authenticateToken = async (token, req, res) => {
         }
         return false;
     }
-    if (!user || String(user.activeSessionId || "") !== decoded.sessionId) {
+    const hasSession = user && (
+        String(user.activeSessionId || "") === decoded.sessionId ||
+        (Array.isArray(user.activeSessionIds) && user.activeSessionIds.includes(decoded.sessionId))
+    );
+    if (!hasSession) {
         invalidSession(res);
         return false;
     }

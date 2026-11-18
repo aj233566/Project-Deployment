@@ -228,6 +228,9 @@
 .icc-feeds { grid-area: feeds; }
 .icc-kpis { grid-area: kpis; }
 .icc-brand-mark { flex: none; width: 4em; height: 4em; object-fit: contain; filter: drop-shadow(0 0 0.5em rgba(79, 124, 138, 0.55)); }
+.icc-brand-mark-dark { display: none; }
+.dark .icc-brand-mark-light { display: none; }
+.dark .icc-brand-mark-dark { display: block; }
 .icc-brand-text { min-width: 0; }
 .icc-brand-text h1 { margin: 0; font: 700 var(--t-l)/1.1 var(--icc-display); letter-spacing: 0.04em; }
 .icc-brand-line-text { display: inline-block; animation: iccLineIn 0.6s ease-out; }
@@ -687,9 +690,9 @@
 .icc-gl-tip { position: absolute; z-index: 7; pointer-events: none; padding: 0.3em 0.65em; background: rgba(23, 28, 31, 0.94); border: 1px solid var(--icc-line-strong); color: #fff; font-size: var(--t-s); }
 .icc-gl-tip b, .icc-gl-tip span, .icc-gl-tip em { display: block; white-space: nowrap; font-style: normal; }
 .icc-gl-tip em { color: var(--icc-cyan); }
-.india-command-center .maplibregl-popup-content { background: var(--surface); color: #fff; border: 1px solid var(--icc-line-strong); font: 500 var(--t-s)/1.35 var(--icc-body); padding: 0.6em 1.8em 0.6em 0.8em; }
+.india-command-center .maplibregl-popup-content { background: var(--surface); color: var(--text-primary); border: 1px solid var(--icc-line-strong); font: 500 var(--t-s)/1.35 var(--icc-body); padding: 0.6em 1.8em 0.6em 0.8em; }
 .india-command-center .maplibregl-popup-tip { border-top-color: var(--surface); border-bottom-color: var(--surface); }
-.india-command-center .maplibregl-popup-close-button { color: #fff; font-size: 22px; }
+.india-command-center .maplibregl-popup-close-button { color: var(--text-primary); font-size: 22px; }
 .india-command-center .maplibregl-ctrl-attrib, .india-command-center .maplibregl-ctrl-attrib a, .india-command-center .maplibregl-ctrl-scale { font-size: var(--t-s) !important; line-height: 1.3; }
 .india-command-center .maplibregl-ctrl-group button { width: 36px; height: 36px; }
 
@@ -811,7 +814,7 @@
 .india-command-center .icc-map-stage .gis-app-wrapper .gis-map-container { left: 0 !important; }
 
 /* Map credits: a dark translucent strip instead of a large white box, so the map is not covered. */
-.icc-gl .maplibregl-ctrl-attrib { background: rgba(23, 28, 31, 0.82) !important; color: #a3b7d2 !important; max-width: 72%; border-radius: 6px 0 0 0; }
+.icc-gl .maplibregl-ctrl-attrib { background: rgba(23, 28, 31, 0.82) !important; color: #a3b7d2 !important; max-width: min(320px, calc(100% - 12px)); border-radius: 6px 0 0 0; font-size: 12px !important; }
 .icc-gl .maplibregl-ctrl-attrib a { color: var(--icc-cyan) !important; }
 
 /* People asking for help (authority): a red strip above the map with who, where, and the two answers. */
@@ -825,4 +828,131 @@
 .icc-help button:hover:not(:disabled) { background: #ef4444; }
 .icc-help button:disabled { opacity: 0.45; cursor: not-allowed; }
 .icc-help button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-.icc-help-error { margin: 6px 0 0; color: #fecaca; font-size: var(--t-s); }
+
+/* Keep the command center legible in both of the shared neutral themes. */
+.india-command-center {
+  --icc-line-strong: var(--ui-accent);
+  --icc-cyan: var(--ui-accent);
+  --icc-blue: var(--ui-accent);
+}
+.india-command-center :is(
+  .icc-panel-title, .icc-brand-region, .icc-clock-time, .icc-kpi-value,
+  .icc-weather-temp, .icc-tab:hover, .icc-tab.active, .icc-tools button,
+  .icc-tools button:hover, .icc-state-badge, .icc-sat button.active,
+  .icc-sat [aria-selected='true'],
+  .icc-backbtn, .icc-autobtn, .icc-chip:hover, .icc-chip.active,
+  .icc-chip.active b, .icc-select select, .icc-select select option,
+  .icc-select select optgroup, .icc-river-value, .icc-roadline b,
+  .icc-summary strong, .icc-rank-row, .icc-idbtn:hover, .icc-type-grid li.icc-type-on,
+  .icc-river-list button.active, .icc-river-list button:hover,
+  .icc-gl-controls button, .icc-gl-tip, .icc-globe-pick,
+  .icc-globe-pick button, .icc-gl-draw, .icc-gl-draw input,
+  .icc-gl-draw select, .icc-gl-draw-actions button, .icc-focus-head,
+  .icc-focus-list button, .icc-user button, .icc-help button,
+  .maplibregl-popup-content, .maplibregl-popup-close-button
+) { color: var(--ink); }
+.india-command-center :is(
+  .icc-brand-sub, .icc-weather-icon, .icc-feeds li, .icc-tab, .icc-chip,
+  .icc-legend .icc-legend-row,
+  .icc-river-stats, .icc-alert-row p,
+  .icc-forecast-list p, .icc-table td, .icc-legend-inline,
+  .icc-chart-label, .icc-chart-label-strong, .icc-river-tip span,
+  .icc-state-tip span, .icc-gl-controls button, .icc-gl-legend,
+  .icc-gl-layers, .icc-gl-draw, .icc-globe-status, .icc-globe-pick,
+  .icc-globe-pilot, .icc-user span, .maplibregl-ctrl-attrib
+) { color: var(--slate); }
+.india-command-center :is(
+  .icc-panel-toolbar, .icc-viewbar, .icc-map-toolbar, .icc-legend,
+  .icc-badge, .icc-chip, .icc-state-badge,
+  .icc-gl-controls, .icc-gl-legend, .icc-gl-tip, .icc-gl-layers,
+  .icc-gl-draw, .icc-globe-status, .icc-globe-pick, .icc-globe-pilot,
+  .icc-focus, .icc-river-tip.leaflet-tooltip, .icc-state-tip.leaflet-tooltip
+) { background: var(--paper); }
+.india-command-center :is(
+  .icc-badge, .icc-chip, .maplibregl-popup-content,
+  .icc-gl-controls, .icc-gl-legend, .icc-gl-tip, .icc-gl-layers,
+  .icc-gl-draw, .icc-globe-status, .icc-globe-pick, .icc-globe-pilot,
+  .icc-focus, .icc-river-tip.leaflet-tooltip, .icc-state-tip.leaflet-tooltip
+) { border-color: var(--line); }
+.india-command-center :is(
+  .icc-panel-head, .icc-panel-toolbar, .icc-viewbar, .icc-map-toolbar,
+  .icc-badge, .icc-chip,
+  .icc-legend, .icc-gl-controls, .icc-gl-legend, .icc-gl-tip,
+  .icc-gl-layers, .icc-gl-draw, .icc-globe-status, .icc-globe-pick,
+  .icc-globe-pilot, .icc-focus, .icc-focus-head, .icc-river-tip.leaflet-tooltip,
+  .icc-state-tip.leaflet-tooltip, .icc-type-grid li.icc-type-on
+) { border-color: var(--line); }
+.india-command-center :is(
+  .icc-minitabs button.active, .icc-tab.active, .icc-tools button:hover,
+  .icc-backbtn, .icc-autobtn, .icc-chip.active, .icc-river-list button.active,
+  .icc-river-list button:hover, .icc-type-grid li.icc-type-on,
+  .icc-table tbody tr:hover td
+) { background: color-mix(in srgb, var(--ink) 7%, var(--paper)); }
+.india-command-center .icc-kpi-value { text-shadow: none; }
+.india-command-center .icc-kpi-label { color: var(--kpi-text, var(--ink)); }
+.india-command-center .icc-kpi-blue { --kpi-text: var(--ui-accent); }
+.india-command-center .icc-kpi-critical { --kpi-text: var(--risk-critical-ink); }
+.india-command-center .icc-kpi-high { --kpi-text: var(--risk-high-ink); }
+.india-command-center .icc-kpi-medium { --kpi-text: var(--risk-moderate-ink); }
+.india-command-center .icc-kpi-low { --kpi-text: var(--risk-low-ink); }
+.india-command-center .icc-kpi-safe { --kpi: var(--icc-green); --kpi-text: var(--risk-low-ink); }
+.india-command-center .icc-badge-critical,
+.india-command-center .icc-badge-red,
+.india-command-center .icc-tone-text-red { color: var(--risk-critical-ink); }
+.india-command-center .icc-badge-high,
+.india-command-center .icc-badge-orange,
+.india-command-center .icc-tone-text-orange { color: var(--risk-high-ink); }
+.india-command-center .icc-badge-medium,
+.india-command-center .icc-badge-yellow,
+.india-command-center .icc-tone-text-yellow { color: var(--risk-moderate-ink); }
+.india-command-center .icc-badge-low,
+.india-command-center .icc-badge-green,
+.india-command-center .icc-tone-text-green { color: var(--risk-low-ink); }
+.india-command-center .icc-badge-blue,
+.india-command-center .icc-tone-text-blue { color: var(--ui-accent); }
+.india-command-center .icc-search { background: var(--paper); }
+.india-command-center .icc-search input { color: var(--ink); }
+.india-command-center .icc-search input::placeholder { color: var(--slate); opacity: 1; }
+.india-command-center .icc-search svg { color: var(--ui-accent); }
+.india-command-center .icc-search-results button:hover,
+.india-command-center .icc-search-results button:focus-visible { background: color-mix(in srgb, var(--ui-accent) 12%, var(--paper)); }
+.india-command-center .icc-sat button.active,
+.india-command-center .icc-sat [aria-selected='true'] { background: var(--ui-accent); color: var(--accent-contrast); }
+.india-command-center .icc-feed-stale { color: var(--risk-moderate-ink); }
+.india-command-center .icc-feed-down { color: var(--risk-critical-ink); }
+.india-command-center .icc-feed-live { color: var(--risk-low-ink); }
+.india-command-center .icc-map-stage .gis-more-badge { color: var(--accent-contrast) !important; }
+.india-command-center .icc-map-stage .gis-cz-map-provider {
+  color: var(--ui-accent) !important;
+  background: color-mix(in srgb, var(--ui-accent) 10%, var(--paper)) !important;
+  border-color: color-mix(in srgb, var(--ui-accent) 45%, var(--line)) !important;
+}
+.india-command-center .icc-chart-label { fill: var(--slate); }
+.india-command-center .icc-chart-label-strong { fill: var(--ink); }
+.india-command-center .icc-chart-grid { stroke: var(--line); }
+.india-command-center .icc-chart-today { stroke: color-mix(in srgb, var(--slate) 40%, transparent); }
+.india-command-center .icc-alert-row,
+.india-command-center .icc-quake-row,
+.india-command-center .icc-forecast-list li,
+.india-command-center .icc-resource-list li,
+.india-command-center .icc-site-list li,
+.india-command-center .icc-pop-list li,
+.india-command-center .icc-rank-list li,
+.india-command-center .icc-table td { border-color: var(--line); }
+.icc-help-error { margin: 6px 0 0; color: var(--risk-critical-ink); font-size: var(--t-s); }
+.india-command-center .icc-state-error { color: var(--risk-critical-ink); }
+.india-command-center .icc-state-warn { color: var(--risk-moderate-ink); }
+.india-command-center .icc-help h2 { color: var(--risk-critical-ink); }
+.india-command-center .icc-help em { color: var(--risk-low-ink); }
+.india-command-center .icc-tab.active,
+.india-command-center .icc-minitabs button.active {
+  color: var(--accent-contrast) !important;
+  background: var(--ui-accent) !important;
+  border-color: var(--ui-accent) !important;
+}
+.india-command-center .icc-sat button.active,
+.india-command-center .icc-sat [aria-selected='true'] {
+  color: var(--accent-contrast) !important;
+  background: var(--ui-accent) !important;
+  border-color: var(--ui-accent) !important;
+}

@@ -1,15 +1,45 @@
-const { checkPrototypeReset } = require("../services/passwordResetPolicy");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../models/user");
+const OtpChallenge = require("../models/otp_challenge");
+const { hasEmailConfig, sendOtpEmail } = require("../services/email_service");
 const { verifyIdentityToken } = require("../services/oauth_identity");
 const accountStatusMessage = (status) => ({
-    locked: "This account is locked after too many incorrect passwords. Contact an administrator to unlock it.",
+    locked: "This account is locked after too many incorrect passwords. Use email verification to unlock it.",
     blocked: "This account is locked. Contact an administrator to unlock it.",
     banned: "This account is banned and cannot sign in.",
     deleted: "This account is no longer available."
 }[status] || "This account cannot sign in.");
+
+const legacySessionList = {
+    $cond: [
+        { $and: [{ $ne: ["$activeSessionId", null] }, { $ne: ["$activeSessionId", ""] }] },
+        ["$activeSessionId"],
+        []
+    ]
+};
+const claimLoginSession = (userId, sessionId, resetFailedAttempts = false) => User.findOneAndUpdate(
+    {
+        _id: userId,
+        $and: [
+            { $or: [{ accountStatus: "active" }, { accountStatus: { $exists: false } }] },
+            {
+                $expr: {
+                    $lt: [
+                        { $size: { $setUnion: [{ $ifNull: ["$activeSessionIds", []] }, legacySessionList] } },
+                        { $ifNull: ["$maxConcurrentSessions", { $cond: [{ $eq: ["$role", "admin"] }, 3, 1] }] }
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        $addToSet: { activeSessionIds: sessionId },
+        ...(resetFailedAttempts ? { $set: { failedLoginAttempts: 0 } } : {})
+    },
+    { returnDocument: "after" }
+);
 
 const recordFailedPasswordAttempt = async (userId) => {
     const activeStatus = {
@@ -47,7 +77,8 @@ const recordFailedPasswordAttempt = async (userId) => {
                 accountStatusReason: "Locked automatically after 5 consecutive incorrect passwords.",
                 accountStatusUpdatedAt: new Date(),
                 accountStatusUpdatedBy: null,
-                activeSessionId: null
+                activeSessionId: null,
+                activeSessionIds: []
             },
             $inc: { failedLoginAttempts: 1 }
         },
@@ -242,27 +273,7 @@ const login = async (req, res) => {
             });
         }
         const sessionId = crypto.randomBytes(32).toString("hex");
-        const claimedUser = await User.findOneAndUpdate(
-            {
-                _id: user._id,
-                $and: [
-                    {
-                        $or: [
-                            { activeSessionId: null },
-                            { activeSessionId: { $exists: false } }
-                        ]
-                    },
-                    {
-                        $or: [
-                            { accountStatus: "active" },
-                            { accountStatus: { $exists: false } }
-                        ]
-                    }
-                ]
-            },
-            { $set: { activeSessionId: sessionId, failedLoginAttempts: 0 } },
-            { returnDocument: "after" }
-        );
+        const claimedUser = await claimLoginSession(user._id, sessionId, true);
         if (!claimedUser) {
             const latestUser = await User.findById(user._id);
             if (latestUser?.accountStatus && latestUser.accountStatus !== "active") {
@@ -275,7 +286,7 @@ const login = async (req, res) => {
             return res.status(409).json({
                 success: false,
                 code: "ACCOUNT_ALREADY_LOGGED_IN",
-                message: "This account is already logged in on another device. Please log out from that device or use another account."
+                message: `This account has reached its ${latestUser?.maxConcurrentSessions || (latestUser?.role === "admin" ? 3 : 1)}-device sign-in limit. Sign out on another device or ask an administrator to raise the limit.`
             });
         }
         const token = jwt.sign(
@@ -382,22 +393,12 @@ const oauthLogin = async (req, res) => {
             });
         }
         const sessionId = crypto.randomBytes(32).toString("hex");
-        const claimedUser = await User.findOneAndUpdate(
-            {
-                _id: user._id,
-                $and: [
-                    { $or: [{ activeSessionId: null }, { activeSessionId: { $exists: false } }] },
-                    { $or: [{ accountStatus: "active" }, { accountStatus: { $exists: false } }] }
-                ]
-            },
-            { $set: { activeSessionId: sessionId } },
-            { returnDocument: "after" }
-        );
+        const claimedUser = await claimLoginSession(user._id, sessionId);
         if (!claimedUser) {
             return res.status(409).json({
                 success: false,
                 code: "ACCOUNT_ALREADY_LOGGED_IN",
-                message: "This account is already logged in on another device. Please log out from that device or use another account."
+                message: `This account has reached its ${user.maxConcurrentSessions || (user.role === "admin" ? 3 : 1)}-device sign-in limit. Sign out on another device or ask an administrator to raise the limit.`
             });
         }
         const token = jwt.sign({
@@ -453,14 +454,18 @@ const oauthLogin = async (req, res) => {
 };
 const logout = async (req, res) => {
     try {
-        const user = await User.findOneAndUpdate(
-            {
-                _id: req.user.userId,
-                activeSessionId: req.user.sessionId
-            },
-            { $set: { activeSessionId: null, lastSeenAt: null } },
+        let user = await User.findOneAndUpdate(
+            { _id: req.user.userId, activeSessionIds: req.user.sessionId },
+            { $pull: { activeSessionIds: req.user.sessionId }, $set: { lastSeenAt: null } },
             { returnDocument: "after" }
         );
+        if (!user) {
+            user = await User.findOneAndUpdate(
+                { _id: req.user.userId, activeSessionId: req.user.sessionId },
+                { $set: { activeSessionId: null, lastSeenAt: null } },
+                { returnDocument: "after" }
+            );
+        }
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -480,59 +485,155 @@ const logout = async (req, res) => {
         });
     }
 };
-const resetPasswordPrototype = async (req, res) => {
+const OTP_PURPOSES = new Set(["login", "password_reset", "unlock", "revoke_sessions"]);
+const digestOtp = (userId, purpose, code) => crypto
+    .createHmac("sha256", process.env.JWT_SECRET || "")
+    .update(`${userId}:${purpose}:${code}`)
+    .digest("hex");
+
+const requestOtp = async (req, res) => {
     try {
-        const email = String(req.body.email || "")
-            .trim()
-            .toLowerCase();
-        const newPassword = String(req.body.newPassword || "");
-        if (!email || !newPassword) {
-            return res.status(400).json({
-                success: false,
-                message: "Email and new password are required."
-            });
+        const email = String(req.body.email || "").trim().toLowerCase();
+        const purpose = String(req.body.purpose || "");
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !OTP_PURPOSES.has(purpose)) {
+            return res.status(400).json({ success: false, message: "Enter a valid email and OTP purpose." });
         }
-        if (newPassword.length < 6 || newPassword.length > 128) {
-            return res.status(400).json({
-                success: false,
-                message: "Password must be between 6 and 128 characters."
-            });
+        if (!process.env.JWT_SECRET) {
+            return res.status(503).json({ success: false, message: "Account verification is not configured on this server." });
         }
-        const switchedOff = checkPrototypeReset({});
-        if (!switchedOff.allowed) {
-            return res.status(switchedOff.status).json({
-                success: false,
-                message: switchedOff.message
-            });
+        // Fail before checking whether an address belongs to an account so setup errors don't reveal account existence.
+        if (!hasEmailConfig()) {
+            return res.status(503).json({ success: false, message: "Email verification is not configured on this server yet." });
         }
         const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "No account was found with that email address."
-            });
+        const status = user?.accountStatus || "active";
+        const purposeAllowed = user && (
+            (purpose === "unlock" && status === "locked") ||
+            (purpose !== "unlock" && status === "active")
+        );
+        if (!purposeAllowed) {
+            return res.status(200).json({ success: true, message: "If the account is eligible, a verification code will be sent shortly." });
         }
-        const policy = checkPrototypeReset({ user });
-        if (!policy.allowed) {
-            return res.status(policy.status).json({
-                success: false,
-                message: policy.message
-            });
+
+        const now = new Date();
+        let challenge = await OtpChallenge.findOne({ userId: user._id, purpose });
+        const withinWindow = challenge && now - challenge.windowStartedAt < 60 * 60 * 1000;
+        if (withinWindow && now - challenge.sentAt < 60 * 1000) {
+            return res.status(429).json({ success: false, message: "Please wait a minute before requesting another code." });
         }
-        user.password = await bcrypt.hash(newPassword, 10);
-        // Anyone signed in with the old password is signed out.
-        user.activeSessionId = null;
-        await user.save();
+        if (withinWindow && challenge.sendCount >= 5) {
+            return res.status(429).json({ success: false, message: "Too many codes requested. Please try again in an hour." });
+        }
+
+        const code = String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+        const windowStartedAt = withinWindow ? challenge.windowStartedAt : now;
+        const sendCount = withinWindow ? challenge.sendCount + 1 : 1;
+        const fields = {
+            codeHash: digestOtp(user._id, purpose, code),
+            validUntil: new Date(now.getTime() + 10 * 60 * 1000),
+            expiresAt: new Date(windowStartedAt.getTime() + 60 * 60 * 1000),
+            attempts: 0,
+            sentAt: now,
+            windowStartedAt,
+            sendCount
+        };
+        if (challenge) Object.assign(challenge, fields);
+        else challenge = new OtpChallenge({ userId: user._id, purpose, ...fields });
+        await challenge.save();
+        try {
+            await sendOtpEmail(user.email, code, purpose);
+        } catch (mailError) {
+            await OtpChallenge.deleteOne({ _id: challenge._id });
+            throw mailError;
+        }
+        return res.status(200).json({ success: true, message: "If the account is eligible, a verification code will be sent shortly." });
+    } catch (error) {
+        if (error.code === "EMAIL_NOT_CONFIGURED") {
+            return res.status(503).json({ success: false, message: "Email verification is not configured on this server yet." });
+        }
+        console.error("OTP request error:", error.message);
+        return res.status(500).json({ success: false, message: "Unable to send a verification code. Please try again." });
+    }
+};
+
+const verifyOtp = async (req, res) => {
+    try {
+        const email = String(req.body.email || "").trim().toLowerCase();
+        const purpose = String(req.body.purpose || "");
+        const code = String(req.body.code || "").trim();
+        if (!email || !OTP_PURPOSES.has(purpose) || !/^\d{6}$/.test(code)) {
+            return res.status(400).json({ success: false, message: "Enter the six-digit code from your email." });
+        }
+        if (purpose === "password_reset") {
+            const newPassword = String(req.body.newPassword || "");
+            if (newPassword.length < 6 || newPassword.length > 128) {
+                return res.status(400).json({ success: false, message: "Password must be between 6 and 128 characters." });
+            }
+        }
+        const user = await User.findOne({ email });
+        if (!user) return res.status(400).json({ success: false, message: "The code is invalid or expired." });
+        const challenge = await OtpChallenge.findOne({ userId: user._id, purpose });
+        const now = new Date();
+        const expectedStatus = purpose === "unlock" ? "locked" : "active";
+        const isValid = challenge && challenge.validUntil > now && challenge.attempts < 5
+            && (user.accountStatus || "active") === expectedStatus
+            && challenge.codeHash === digestOtp(user._id, purpose, code);
+        if (!isValid) {
+            if (challenge && challenge.validUntil > now && challenge.attempts < 5) {
+                await OtpChallenge.updateOne({ _id: challenge._id }, { $inc: { attempts: 1 } });
+            }
+            return res.status(400).json({ success: false, message: "The code is invalid or expired." });
+        }
+        const consumed = await OtpChallenge.findOneAndDelete({
+            _id: challenge._id,
+            codeHash: challenge.codeHash,
+            validUntil: { $gt: now },
+            attempts: { $lt: 5 }
+        });
+        if (!consumed) return res.status(400).json({ success: false, message: "The code is invalid or expired." });
+
+        if (purpose === "password_reset") {
+            user.password = await bcrypt.hash(String(req.body.newPassword), 10);
+            user.failedLoginAttempts = 0;
+            user.activeSessionId = null;
+            user.activeSessionIds = [];
+            await user.save();
+            return res.status(200).json({ success: true, message: "Password updated. All devices have been signed out; sign in again." });
+        }
+        if (purpose === "unlock") {
+            const unlocked = await User.findOneAndUpdate(
+                { _id: user._id, accountStatus: "locked" },
+                { $set: { accountStatus: "active", accountStatusReason: "", accountStatusUpdatedAt: new Date(), accountStatusUpdatedBy: null, failedLoginAttempts: 0, activeSessionId: null, activeSessionIds: [] } },
+                { returnDocument: "after" }
+            );
+            if (!unlocked) return res.status(409).json({ success: false, message: "This account could not be unlocked. Please try again." });
+            return res.status(200).json({ success: true, message: "Account unlocked. You can now sign in." });
+        }
+        if (purpose === "revoke_sessions") {
+            await User.updateOne({ _id: user._id, accountStatus: "active" }, { $set: { activeSessionId: null, activeSessionIds: [], lastSeenAt: null } });
+            return res.status(200).json({ success: true, message: "All devices have been signed out." });
+        }
+
+        if (user.role === "authority" && user.authorityStatus !== "verified") {
+            return res.status(403).json({ success: false, message: user.authorityStatus === "rejected" ? "Your authority application was rejected." : "Your authority account is awaiting admin approval." });
+        }
+        const sessionId = crypto.randomBytes(32).toString("hex");
+        const claimedUser = await claimLoginSession(user._id, sessionId, true);
+        if (!claimedUser) return res.status(409).json({ success: false, code: "ACCOUNT_ALREADY_LOGGED_IN", message: "This account has reached its device sign-in limit." });
+        const token = jwt.sign({ userId: claimedUser._id, role: claimedUser.role, authorityStatus: claimedUser.authorityStatus, sessionId }, process.env.JWT_SECRET, { expiresIn: "7d" });
         return res.status(200).json({
             success: true,
-            message: "Password updated successfully."
+            message: "Login successful.",
+            token,
+            user: {
+                id: claimedUser._id, name: claimedUser.name, email: claimedUser.email, phone: claimedUser.phone,
+                role: claimedUser.role, location: claimedUser.location, department: claimedUser.department,
+                designation: claimedUser.designation, employeeId: claimedUser.employeeId, authorityStatus: claimedUser.authorityStatus
+            }
         });
     } catch (error) {
-        console.error("Password reset error:", error.message);
-        return res.status(500).json({
-            success: false,
-            message: "Unable to reset password. Please try again."
-        });
+        console.error("OTP verification error:", error.message);
+        return res.status(500).json({ success: false, message: "Unable to verify the code. Please try again." });
     }
 };
 module.exports = {
@@ -540,5 +641,6 @@ module.exports = {
     login,
     oauthLogin,
     logout,
-    resetPasswordPrototype
+    requestOtp,
+    verifyOtp
 };

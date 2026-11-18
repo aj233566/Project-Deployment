@@ -1,10 +1,12 @@
 :root {
   color-scheme: light;
-  --stone: #FFFFFF;
-  --paper: #F5F5F5;
-  --ink: #111111;
-  --slate: #555555;
-  --line: #DDDDDD;
+  --stone: #F4F7F8;
+  --paper: #FFFFFF;
+  --ink: #18232D;
+  --slate: #4B5B68;
+  --line: #D9E1E6;
+  --ui-accent: #176B87;
+  --accent-contrast: #FFFFFF;
   --risk-low: #2E7D32;
   --risk-moderate: #D6A000;
   --risk-high: #E87500;
@@ -22,36 +24,38 @@
   --high-risk: var(--risk-high);
   --warning: var(--risk-moderate);
   --safe: var(--risk-low);
-  --info: var(--slate);
+  --info: var(--ui-accent);
   --text-primary: var(--ink);
   --text-secondary: var(--slate);
   --text-muted: var(--slate);
   --text-disabled: #888888;
-  --map-land: #E5E5E5;
-  --map-water: #DCE9EC;
-  --map-roads: #A6A6A6;
-  --map-buildings: #D2D2D2;
-  --map-borders: #B8B8B8;
+  --map-land: #E9EFF2;
+  --map-water: #DCEAF0;
+  --map-roads: #ADB9C0;
+  --map-buildings: #E1E8EC;
+  --map-borders: #C7D2D9;
   --font-ui: "Times New Roman", Times, serif;
   --font-mono: "Times New Roman", Times, serif;
   --bs-body-font-family: "Times New Roman", Times, serif;
 }
 :root.dark {
   color-scheme: dark;
-  --stone: #1A1A1A;
-  --paper: #242424;
-  --ink: #F2F2F2;
-  --slate: #A8A8A8;
-  --line: #3A3A3A;
+  --stone: #111A20;
+  --paper: #1B272E;
+  --ink: #F1F5F7;
+  --slate: #AAB9C2;
+  --line: #35444C;
+  --ui-accent: #67CBD8;
+  --accent-contrast: #10252B;
   --risk-low-ink: #81C784;
   --risk-moderate-ink: #FFE082;
   --risk-high-ink: #FFB74D;
   --risk-critical-ink: #FF8A80;
   --map-land: var(--surface-elevated);
-  --map-water: #1B3942;
-  --map-roads: #59656A;
-  --map-buildings: #293236;
-  --map-borders: #3A4549;
+  --map-water: #18303A;
+  --map-roads: #53636C;
+  --map-buildings: #202D34;
+  --map-borders: #35444C;
 }
 * {
   box-sizing: border-box;

@@ -1,7 +1,8 @@
 // Free hazard feeds: GDACS (UN/EC global disaster alerts) and USGS earthquakes. Both are keyless
-// and allow browser requests. Events are filtered to the India region and sorted most urgent first.
+// and keyless. GDACS is fetched by the API to avoid browser CORS and network restrictions.
 
-const GDACS_URL = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH';
+import api from '../api';
+
 const USGS_URL = 'https://earthquake.usgs.gov/fdsnws/event/1/query';
 const TIMEOUT_MS = 30000;
 
@@ -77,16 +78,11 @@ export function parseGdacsEvents(payload, now = Date.now()) {
 
 export async function fetchGdacsEvents(options, now = new Date()) {
   const from = dateOnly(new Date(now.getTime() - 30 * 24 * 3600e3));
-  // One request per event type: GDACS caps a response at 100 events and wildfires would crowd out the rest.
-  const request = (type) => getJson(
-    `${GDACS_URL}?eventlist=${type}&fromdate=${from}&todate=${dateOnly(now)}&alertlevel=Green;Orange;Red`,
-    options,
-  );
-  // A type that fails (or is empty) must not hide the others, so each request is allowed to fail on its own, but not all of them.
-  const results = await Promise.allSettled([request('TC'), request('FL'), request('TS'), request('DR')]);
-  if (results.every((result) => result.status === 'rejected')) throw results[0].reason;
-  const features = results.flatMap((result) => (result.status === 'fulfilled' ? result.value?.features || [] : []));
-  return parseGdacsEvents({ features }, now.getTime());
+  const response = await api.get('/feeds/gdacs', {
+    params: { fromdate: from, todate: dateOnly(now) },
+    signal: options?.signal,
+  });
+  return parseGdacsEvents(response.data, now.getTime());
 }
 
 export function parseUsgsQuakes(payload) {

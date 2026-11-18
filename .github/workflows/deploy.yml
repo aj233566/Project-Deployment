@@ -1,4 +1,4 @@
-name: SENETRY CI-CD
+name: SENTRY CI-CD
 
 on:
   push:
@@ -39,19 +39,22 @@ jobs:
       - name: Build and Validate Frontend
         working-directory: frontend
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-          VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
+          # PUBLIC CONFIGURATION - GITHUB VARIABLES
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          VITE_MICROSOFT_CLIENT_ID: ${{ vars.VITE_MICROSOFT_CLIENT_ID }}
+          VITE_TOMTOM_TRAFFIC_ENABLED: ${{ vars.VITE_TOMTOM_TRAFFIC_ENABLED }}
+          VITE_DEMO_MODE: ${{ vars.VITE_DEMO_MODE }}
+
+          # API TOKENS - GITHUB SECRETS
           VITE_TOMTOM_API_KEYS: ${{ secrets.VITE_TOMTOM_API_KEYS }}
-          VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
-          VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
           VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
 
         run: |
           set -e
 
           if [ -z "$VITE_API_URL" ]; then
-            echo "::error::VITE_API_URL GitHub Secret is missing."
+            echo "::error::VITE_API_URL GitHub Variable is missing."
             exit 1
           fi
 
@@ -114,19 +117,22 @@ jobs:
           name: sentry-frontend-dist
           path: frontend/dist/
 
-      # SYNCHRONIZE GITHUB SECRETS WITH NETLIFY
+      # SYNCHRONIZE GITHUB VARIABLES AND SECRETS WITH NETLIFY
       - name: Synchronize Netlify Environment Variables
         working-directory: frontend
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-          VITE_MICROSOFT_CLIENT_ID: ${{ secrets.VITE_MICROSOFT_CLIENT_ID }}
+          # GITHUB VARIABLES
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
+          VITE_MICROSOFT_CLIENT_ID: ${{ vars.VITE_MICROSOFT_CLIENT_ID }}
+          VITE_TOMTOM_TRAFFIC_ENABLED: ${{ vars.VITE_TOMTOM_TRAFFIC_ENABLED }}
+          VITE_DEMO_MODE: ${{ vars.VITE_DEMO_MODE }}
+
+          # GITHUB SECRETS
           VITE_TOMTOM_API_KEYS: ${{ secrets.VITE_TOMTOM_API_KEYS }}
-          VITE_TOMTOM_TRAFFIC_ENABLED: ${{ secrets.VITE_TOMTOM_TRAFFIC_ENABLED }}
-          VITE_DEMO_MODE: ${{ secrets.VITE_DEMO_MODE }}
           VITE_CESIUM_ION_TOKEN: ${{ secrets.VITE_CESIUM_ION_TOKEN }}
 
         run: |
@@ -146,9 +152,9 @@ jobs:
             VITE_API_URL \
             VITE_GOOGLE_CLIENT_ID \
             VITE_MICROSOFT_CLIENT_ID \
-            VITE_TOMTOM_API_KEYS \
             VITE_TOMTOM_TRAFFIC_ENABLED \
             VITE_DEMO_MODE \
+            VITE_TOMTOM_API_KEYS \
             VITE_CESIUM_ION_TOKEN
           do
             value="${!key}"
