@@ -228,6 +228,9 @@
 .icc-feeds { grid-area: feeds; }
 .icc-kpis { grid-area: kpis; }
 .icc-brand-mark { flex: none; width: 4em; height: 4em; object-fit: contain; filter: drop-shadow(0 0 0.5em rgba(79, 124, 138, 0.55)); }
+.icc-brand-mark-dark { display: none; }
+.dark .icc-brand-mark-light { display: none; }
+.dark .icc-brand-mark-dark { display: block; }
 .icc-brand-text { min-width: 0; }
 .icc-brand-text h1 { margin: 0; font: 700 var(--t-l)/1.1 var(--icc-display); letter-spacing: 0.04em; }
 .icc-brand-line-text { display: inline-block; animation: iccLineIn 0.6s ease-out; }

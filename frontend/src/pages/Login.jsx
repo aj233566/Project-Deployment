@@ -149,7 +149,7 @@ function Login() {
         <div className="row min-vh-100 align-items-center justify-content-center">
           <div className="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
             <div className="auth-brand text-center">
-              <div className="brand-mark" aria-hidden="true"><img src="/senetry-logo-transparent.svg" alt="" /></div>
+              <div className="brand-mark" aria-hidden="true"><img className="logo-light" src="/senetry-logo-transparent.svg" alt="" /><img className="logo-dark" src="/senetry-logo-dark.svg" alt="" /></div>
 
               <h1>SENETRY</h1>
 

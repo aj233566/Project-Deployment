@@ -773,3 +773,118 @@ body::-webkit-scrollbar {
 .status-danger { background: color-mix(in srgb, var(--risk-critical) 15%, var(--paper)); border: 1px solid var(--risk-critical); color: var(--risk-critical-ink); }
 .status-high { background: color-mix(in srgb, var(--risk-high) 15%, var(--paper)); border: 1px solid var(--risk-high); color: var(--risk-high-ink); }
 .status-unknown { background: var(--paper); border: 1px solid var(--line); color: var(--slate); }
+
+/* Responsive refinements for the Bootstrap-based citizen dashboard. */
+.citizen-dashboard {
+  width: 100%;
+  min-width: 0;
+  padding: clamp(12px, 2.2vw, 28px);
+  overflow-x: clip;
+}
+.citizen-container {
+  width: 100%;
+  min-width: 0;
+  max-width: 1440px;
+}
+.citizen-dashboard .row,
+.citizen-dashboard .row > *,
+.citizen-dashboard section,
+.citizen-card-header > div {
+  min-width: 0;
+}
+.citizen-topbar > :first-child {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+.citizen-title,
+.citizen-subtitle,
+.citizen-card-muted,
+.citizen-alert p,
+.data-name,
+.data-meta,
+.citizen-report-location,
+.citizen-notification-message {
+  overflow-wrap: anywhere;
+}
+.citizen-actions {
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.citizen-actions .citizen-btn {
+  min-width: 0;
+  white-space: normal;
+}
+.citizen-alert > div { min-width: 0; }
+.citizen-card-header { flex-wrap: wrap; }
+.citizen-card-header .status-badge { max-width: 100%; white-space: normal; }
+.citizen-sections {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.citizen-sections::-webkit-scrollbar { display: none; }
+.citizen-sections a { flex: 0 0 auto; }
+.citizen-dashboard #citizen-map,
+.citizen-dashboard #citizen-map > section { min-width: 0; max-width: 100%; }
+.citizen-dashboard .data-list-scroll { max-width: 100%; }
+.citizen-report-main { overflow-wrap: anywhere; }
+
+@media (max-width: 991.98px) {
+  .citizen-topbar { align-items: stretch; }
+  .citizen-actions { justify-content: flex-start; }
+  .citizen-dashboard .citizen-card { height: auto; }
+}
+@media (max-width: 767.98px) {
+  .citizen-dashboard .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .citizen-dashboard .resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .citizen-dashboard .metric-item,
+  .citizen-dashboard .resource-box { min-width: 0; padding: 12px; }
+  .citizen-dashboard .citizen-report-row { align-items: flex-start; }
+}
+@media (max-width: 575.98px) {
+  .citizen-dashboard { padding: 12px; }
+  .citizen-container .row.g-3 { --bs-gutter-x: 0.75rem; --bs-gutter-y: 0.75rem; }
+  .citizen-topbar { gap: 12px; margin-bottom: 16px; }
+  .citizen-eyebrow { letter-spacing: 0.08em; }
+  .citizen-actions {
+    display: grid;
+    grid-template-columns: 54px repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .citizen-actions .citizen-notification-button {
+    width: 54px;
+    min-width: 54px;
+    padding: 8px;
+  }
+  .citizen-actions .citizen-btn { width: 100%; padding: 9px 8px; }
+  .citizen-alert { gap: 10px; padding: 12px; }
+  .citizen-card { padding: 14px; }
+  .citizen-card-header { gap: 8px; margin-bottom: 14px; }
+  .citizen-card-header .status-badge { margin-left: auto; }
+  .citizen-sections { gap: 6px; margin-bottom: 12px; }
+  .citizen-sections a { padding: 7px 11px; }
+  .citizen-dashboard .data-row { align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+  .citizen-dashboard .data-row > :first-child { flex: 1 1 160px; min-width: 0; }
+  .citizen-dashboard .data-row > .status-badge,
+  .citizen-dashboard .data-row > .road-status { margin-left: auto; }
+  .citizen-dashboard .metric-grid,
+  .citizen-dashboard .resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .citizen-dashboard .metric-label,
+  .citizen-dashboard .resource-label { overflow-wrap: anywhere; }
+  .citizen-dashboard .citizen-report-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .citizen-dashboard .citizen-report-main { grid-column: 1 / -1; width: auto; }
+  .citizen-dashboard .citizen-report-status { min-width: 0; }
+  .citizen-dashboard .citizen-report-view-btn { margin-left: 0; justify-self: end; white-space: normal; }
+  .citizen-dashboard .citizen-empty-reports { gap: 10px; }
+  .citizen-dashboard .citizen-empty-reports .citizen-btn { margin-left: 0; width: 100%; }
+}
+@media (max-width: 359.98px) {
+  .citizen-dashboard { padding: 8px; }
+  .citizen-dashboard .citizen-card { padding: 12px; }
+  .citizen-actions { grid-template-columns: 48px repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .citizen-actions .citizen-notification-button { width: 48px; min-width: 48px; }
+  .citizen-dashboard .metric-item,
+  .citizen-dashboard .resource-box { padding: 9px; }
+}

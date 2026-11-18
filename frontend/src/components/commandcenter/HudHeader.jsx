@@ -57,7 +57,10 @@ function BrandLine({ lines }) {
 
 function BrandMark() {
   return (
-    <img className="icc-brand-mark" src="/senetry-mark.svg" alt="SENETRY" />
+    <>
+      <img className="icc-brand-mark icc-brand-mark-light" src="/senetry-mark.svg" alt="SENETRY" />
+      <img className="icc-brand-mark icc-brand-mark-dark" src="/senetry-mark-dark.svg" alt="" aria-hidden="true" />
+    </>
   );
 }
 

@@ -92,6 +92,9 @@ body {
     left: -81px;
     top: -67px;
 }
+.brand-mark .logo-dark { display: none; }
+.dark .brand-mark .logo-light { display: none; }
+.dark .brand-mark .logo-dark { display: block; }
 .auth-brand h1 {
     margin: 0;
     color: var(--text);
@@ -106,6 +109,7 @@ body {
     line-height: 1.5;
 }
 .auth-card {
+    container-type: inline-size;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -172,19 +176,57 @@ body {
 }
 .oauth-options {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 275px));
     gap: 10px;
-    justify-items: center;
+    justify-content: center;
     width: 100%;
 }
 .oauth-google-host {
     position: relative;
-    width: min(360px, 100%);
-    min-height: 44px;
-    max-width: 100%;
+    width: 100%;
+    max-width: 275px;
+    height: 50px;
+    min-height: 50px;
+    overflow: hidden;
+    justify-self: center;
 }
-.oauth-google-host iframe {
-    max-width: 100%;
+.oauth-google-host.oauth-google-dark {
+    background: #202124;
 }
+.oauth-google-host.oauth-google-light {
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+}
+.oauth-google-frame {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+}
+.oauth-google-frame iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    border: 0;
+}
+.oauth-google-visual {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 50px;
+    color: #fff;
+    font: bold 24px/1 "Times New Roman", Times, serif;
+    text-align: center;
+    pointer-events: none;
+}
+.oauth-google-light .oauth-google-visual { color: #3c4043; }
+.oauth-google-label { overflow-wrap: anywhere; }
 .oauth-google-host.oauth-disabled {
     opacity: 0.6;
     pointer-events: none;
@@ -196,20 +238,24 @@ body {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    width: min(360px, 100%);
-    min-height: 44px;
-    padding: 8px 14px;
+    width: 100%;
+    max-width: 275px;
+    min-width: 0;
+    height: 50px;
+    min-height: 50px;
+    padding: 4px 8px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--bg-secondary);
     color: var(--text);
-    font-family: inherit;
-    font-size: 16px;
-    font-weight: 600;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 24px;
+    font-weight: 700;
     cursor: pointer;
 }
 .oauth-google-placeholder {
     position: relative;
+    justify-self: center;
     padding-left: 58px;
     background: var(--bg-secondary);
     border-color: var(--border);
@@ -218,10 +264,31 @@ body {
 }
 .oauth-microsoft-button {
     position: relative;
-    padding-left: 58px;
-    background: var(--bg-secondary);
-    border-color: var(--border);
-    color: var(--text-primary);
+    justify-self: center;
+    width: 100%;
+    max-width: 275px;
+    min-width: 0;
+    height: 50px;
+    min-height: 50px;
+    padding: 4px 8px 4px 50px;
+    border-radius: 4px;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.oauth-microsoft-dark {
+    border-color: transparent;
+    background: #202124;
+    color: #fff;
+}
+.oauth-microsoft-light {
+    border-color: #dadce0;
+    background: #fff;
+    color: #3c4043;
 }
 .google-mark {
     position: absolute;
@@ -229,20 +296,19 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
+    width: 50px;
+    height: 50px;
     background: #fff;
-    border-radius: var(--radius) 0 0 var(--radius);
-    color: #4285f4;
-    font-size: 21px;
+    border-radius: 4px 0 0 4px;
     font-weight: 800;
 }
+.google-mark img { display: block; width: 50px; height: 50px; }
 .oauth-fallback-button {
     position: absolute;
     inset: 0;
 }
 .oauth-microsoft-button:hover:not(:disabled) {
-    background: var(--surface-elevated);
-    border-color: var(--info);
+    filter: brightness(1.08);
 }
 .oauth-google-placeholder:hover:not(:disabled),
 .oauth-fallback-button:hover:not(:disabled) {
@@ -263,9 +329,10 @@ body {
     gap: 2px;
     align-content: center;
     justify-content: center;
-    width: 44px;
+    width: 50px;
+    height: 50px;
     background: #fff;
-    border-radius: var(--radius) 0 0 var(--radius);
+    border-radius: 4px 0 0 4px;
 }
 .microsoft-mark i:nth-child(1) { background: #f25022; }
 .microsoft-mark i:nth-child(2) { background: #7fba00; }
@@ -273,10 +340,32 @@ body {
 .microsoft-mark i:nth-child(4) { background: #ffb900; }
 .oauth-setup-note,
 .oauth-error {
+    grid-column: 1 / -1;
     margin: 0;
     color: var(--text-secondary);
     font-size: 14px;
     text-align: center;
+}
+.oauth-error { grid-column: 1 / -1; }
+@container (max-width: 559px) {
+    .oauth-options { grid-template-columns: minmax(0, 1fr); }
+    .oauth-options > .oauth-google-host,
+    .oauth-options > .oauth-microsoft-button,
+    .oauth-options > .oauth-google-placeholder,
+    .oauth-options > .oauth-fallback-button {
+        width: 100%;
+        justify-self: center;
+    }
+}
+@media (max-width: 767.98px) {
+    .oauth-options { grid-template-columns: minmax(0, 1fr); }
+    .oauth-options > .oauth-google-host,
+    .oauth-options > .oauth-microsoft-button,
+    .oauth-options > .oauth-google-placeholder,
+    .oauth-options > .oauth-fallback-button {
+        width: 100%;
+        justify-self: center;
+    }
 }
 .oauth-error {
     color: #c43838;

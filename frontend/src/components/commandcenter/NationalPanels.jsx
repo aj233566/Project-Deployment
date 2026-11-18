@@ -110,7 +110,7 @@ export function PopulationStatesPanel({ populationFeed, habitations, index, load
           <h3 className="icc-subhead">All {ranking.length} states and union territories, estimated {national ? national.year : ''}</h3>
           <div className="icc-summary">
             <strong>{national ? inr(national.value) : (populationFeed?.status === 'loading' ? '…' : '—')}</strong>
-            <span>{national ? `India's population in ${national.year}, World Bank (live API)` : 'India population unavailable right now (World Bank)'}</span>
+            <span>{national ? `India's population in ${national.year}, World Bank (${national.stale ? 'cached estimate' : 'live API'})` : 'India population unavailable right now (World Bank)'}</span>
           </div>
           {ranking.length > 0 ? (
             <ul className="icc-list icc-rank-list">

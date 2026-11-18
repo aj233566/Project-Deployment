@@ -154,7 +154,7 @@ function Signup() {
           <div className="col-12 col-sm-11 col-md-10 col-lg-9 col-xl-8">
 
             <div className="auth-brand text-center">
-              <div className="brand-mark" aria-hidden="true"><img src="/senetry-logo-transparent.svg" alt="" /></div>
+              <div className="brand-mark" aria-hidden="true"><img className="logo-light" src="/senetry-logo-transparent.svg" alt="" /><img className="logo-dark" src="/senetry-logo-dark.svg" alt="" /></div>
 
               <h1>SENETRY</h1>
 

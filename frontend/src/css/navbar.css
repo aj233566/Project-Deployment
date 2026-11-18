@@ -24,6 +24,9 @@
 .senetry-navbar-brand { align-items: center; display: inline-flex; gap: 0.5rem; }
 .senetry-navbar-mark { position: relative; display: block; width: 38px; height: 38px; overflow: hidden; border: 1px solid var(--line); border-radius: 0.45rem; background: var(--stone); }
 .senetry-navbar-mark img { position: absolute; top: -40px; left: -48px; width: 135px; height: 135px; max-width: none; }
+.senetry-navbar-mark img.logo-dark { display: none; }
+.dark .senetry-navbar-mark img.logo-light { display: none; }
+.dark .senetry-navbar-mark img.logo-dark { display: block; }
 .senetry-navbar-name { font-size: 1.15rem; font-weight: 800; letter-spacing: 0.08em; }
 .senetry-navbar .nav-link,
 .senetry-navbar .grouped-nav-trigger { color: var(--slate); }
